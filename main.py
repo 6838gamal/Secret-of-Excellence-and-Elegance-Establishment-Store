@@ -41,13 +41,17 @@ async def seed_admin():
 
     db = SessionLocal()
     try:
-        admin_email = os.environ.get("ADMIN_EMAIL", "admin@tamayoz.com")
-        admin_pass = os.environ.get("ADMIN_PASSWORD", "Admin@123456")
-        if not get_user_by_email(db, admin_email):
-            create_user(db, name="مدير النظام", email=admin_email, password=admin_pass, role=UserRole.admin)
-            print(f"✅ Admin created: {admin_email}")
+        if not get_user_by_email(db, settings.ADMIN_EMAIL):
+            create_user(
+                db,
+                name="مدير النظام",
+                email=settings.ADMIN_EMAIL,
+                password=settings.ADMIN_PASSWORD,
+                role=UserRole.admin,
+            )
+            print(f"✅ Admin created: {settings.ADMIN_EMAIL}")
         else:
-            print(f"ℹ️  Admin already exists: {admin_email}")
+            print(f"ℹ️  Admin already exists: {settings.ADMIN_EMAIL}")
     finally:
         db.close()
 

@@ -1,38 +1,49 @@
 from pydantic_settings import BaseSettings
+from pydantic import Field
 from functools import lru_cache
-import os
 
 
 class Settings(BaseSettings):
-    # App
+    # ─── Application ─────────────────────────────────────────────────────────
     APP_NAME: str = "متجر مؤسسة سر التميز والأناقة"
     APP_VERSION: str = "1.0.0"
     DEBUG: bool = False
     HOST: str = "0.0.0.0"
     PORT: int = 5000
 
-    # Security
-    SECRET_KEY: str = os.environ.get("SESSION_SECRET", "changeme-super-secret-key-2024")
+    # ─── Security ────────────────────────────────────────────────────────────
+    SECRET_KEY: str = Field(
+        default="changeme-super-secret-key-2024",
+        alias="SESSION_SECRET",
+    )
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 8  # 8 hours
 
-    # Database
+    # ─── Database ────────────────────────────────────────────────────────────
     DATABASE_URL: str = "sqlite:///./tamayoz.db"
 
-    # Beezati
-    BEEZATI_API_KEY: str = os.environ.get("BEEZATI_API_KEY", "")
-    BEEZATI_SECRET: str = os.environ.get("BEEZATI_SECRET", "")
+    # ─── Beezati Payment Gateway ─────────────────────────────────────────────
+    BEEZATI_API_KEY: str = ""
+    BEEZATI_SECRET: str = ""
     BEEZATI_BASE_URL: str = "https://api.beezati.com/v1"
-    BEEZATI_WEBHOOK_SECRET: str = os.environ.get("BEEZATI_WEBHOOK_SECRET", "")
+    BEEZATI_WEBHOOK_SECRET: str = ""
 
-    # Company
+    # ─── Admin Seed ──────────────────────────────────────────────────────────
+    ADMIN_EMAIL: str = "admin@tamayoz.com"
+    ADMIN_PASSWORD: str = "Admin@123456"
+
+    # ─── Company Info ────────────────────────────────────────────────────────
     COMPANY_NAME: str = "مؤسسة سر التميز والأناقة"
     COMPANY_LOGO: str = "/static/logo.png"
     CURRENCY_DEFAULT: str = "SAR"
 
-    class Config:
-        env_file = ".env"
-        case_sensitive = True
+    model_config = {
+        "env_file": ".env",
+        "env_file_encoding": "utf-8",
+        "case_sensitive": True,
+        "populate_by_name": True,   # allow both alias and field name
+        "extra": "ignore",
+    }
 
 
 @lru_cache()

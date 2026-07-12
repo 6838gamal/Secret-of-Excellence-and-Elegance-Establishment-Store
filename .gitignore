@@ -1,34 +1,45 @@
-# Python
+# بيئة Python
 __pycache__/
 *.py[cod]
-*$py.class
-*.so
+*.pyo
+*.pyd
 .Python
-build/
-dist/
 *.egg-info/
+dist/
+build/
 .eggs/
 .venv/
 venv/
 env/
 
-# Database
-*.db
-*.sqlite3
-
-# Environment
+# متغيرات البيئة — لا ترفعها أبداً
 .env
 
-# IDE
-.vscode/
-.idea/
-*.swp
-
-# Uploads
-app/static/uploads/
-
-# Logs
-*.log
+# قاعدة البيانات المحلية
+*.db
+*.db-shm
+*.db-wal
+data/
 
 # Replit
-.replit.nix
+.replit
+replit.nix
+uv.lock
+.upm/
+.cache/
+.pythonlibs/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# نظام التشغيل
+.DS_Store
+Thumbs.db
+
+# ملفات مؤقتة
+*.log
+*.tmp
+tmp/
