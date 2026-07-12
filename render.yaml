@@ -4,19 +4,5 @@ services:
     runtime: docker
     plan: free
     envVars:
-      - key: SESSION_SECRET
-        generateValue: true
-      - key: DATABASE_URL
-        value: postgresql://gamalalmaqtary:xLETQQcyz4g5YQrH1DNJMolBy353PtIv@dpg-d99t3t77f7vs73bapu20-a.oregon-postgres.render.com/secret_of_excellence_and_elegance
-      - key: ADMIN_EMAIL
-        value: admin@tamayoz.com
-      - key: ADMIN_PASSWORD
-        sync: false
-      - key: BEEZATI_API_KEY
-        sync: false
-      - key: BEEZATI_SECRET
-        sync: false
-      - key: BEEZATI_WEBHOOK_SECRET
-        sync: false
       - key: PORT
         value: "5000"

@@ -13,14 +13,14 @@ class Settings(BaseSettings):
 
     # ─── Security ────────────────────────────────────────────────────────────
     SECRET_KEY: str = Field(
-        default="changeme-super-secret-key-2024",
+        default="T@m@yoz-S3cr3t-K3y-2024-XyZ!@#$%^",
         alias="SESSION_SECRET",
     )
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 8  # 8 hours
 
     # ─── Database ────────────────────────────────────────────────────────────
-    DATABASE_URL: str = "sqlite:///./tamayoz.db"
+    DATABASE_URL: str = "postgresql://gamalalmaqtary:xLETQQcyz4g5YQrH1DNJMolBy353PtIv@dpg-d99t3t77f7vs73bapu20-a.oregon-postgres.render.com/secret_of_excellence_and_elegance"
 
     # ─── Beezati Payment Gateway ─────────────────────────────────────────────
     BEEZATI_API_KEY: str = ""
@@ -41,7 +41,7 @@ class Settings(BaseSettings):
         "env_file": ".env",
         "env_file_encoding": "utf-8",
         "case_sensitive": True,
-        "populate_by_name": True,   # allow both alias and field name
+        "populate_by_name": True,
         "extra": "ignore",
     }
 
