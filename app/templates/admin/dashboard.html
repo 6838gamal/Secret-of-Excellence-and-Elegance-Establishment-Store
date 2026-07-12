@@ -1,0 +1,73 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}الإحصائيات{% endblock %}
+{% block page_title %}الإحصائيات{% endblock %}
+
+{% block content %}
+<div class="animate-in">
+  <!-- Page Header -->
+  <div class="flex items-center justify-between mb-8">
+    <div>
+      <h1 class="text-2xl font-black text-white">لوحة الإحصائيات</h1>
+      <p class="text-white/40 text-sm mt-1">مرحباً، {{ user.name }} 👋</p>
+    </div>
+    <a href="/admin/links" class="gold-gradient text-brand-900 font-bold px-5 py-2.5 rounded-xl shadow-lg hover:shadow-gold-500/30 transition-shadow">
+      + رابط دفع جديد
+    </a>
+  </div>
+
+  <!-- Stats Grid -->
+  <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
+    {% set cards = [
+      ('💰', 'إجمالي الإيرادات', stats.total_revenue ~ ' SAR', 'text-gold-400'),
+      ('📅', 'إيرادات اليوم', stats.daily_revenue ~ ' SAR', 'text-green-400'),
+      ('📆', 'إيرادات الشهر', stats.monthly_revenue ~ ' SAR', 'text-blue-400'),
+      ('📦', 'إجمالي الطلبات', stats.total_orders, 'text-white'),
+      ('✅', 'المدفوعة', stats.paid_orders, 'text-green-400'),
+      ('❌', 'الفاشلة', stats.failed_orders, 'text-red-400'),
+    ] %}
+    {% for icon, label, value, color in cards %}
+    <div class="stat-card rounded-2xl p-5">
+      <div class="flex items-center gap-3 mb-3">
+        <span class="text-2xl">{{ icon }}</span>
+        <p class="text-white/50 text-sm">{{ label }}</p>
+      </div>
+      <p class="text-2xl font-black {{ color }}">{{ value }}</p>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Recent Orders -->
+  <div class="card rounded-2xl overflow-hidden">
+    <div class="px-6 py-4 border-b border-white/5 flex items-center justify-between">
+      <h2 class="text-white font-bold">آخر الطلبات</h2>
+      <a href="/admin/orders" class="text-brand-400 hover:text-brand-300 text-sm transition-colors">عرض الكل ←</a>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full">
+        <thead>
+          <tr class="border-b border-white/5">
+            {% for h in ['#', 'العميل', 'المبلغ', 'الحالة', 'التاريخ'] %}
+            <th class="text-right text-white/40 text-xs font-semibold px-6 py-3">{{ h }}</th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for order in recent_orders %}
+          <tr class="border-b border-white/5 hover:bg-white/3 transition-colors">
+            <td class="px-6 py-4 text-white/50 text-sm">{{ order.id }}</td>
+            <td class="px-6 py-4 text-white text-sm">{{ order.customer_name or '—' }}</td>
+            <td class="px-6 py-4 text-gold-400 font-semibold text-sm">{{ "%.2f"|format(order.amount) }} {{ order.currency }}</td>
+            <td class="px-6 py-4">
+              <span class="badge-{{ order.status.value }} px-3 py-1 rounded-full text-xs font-semibold">{{ order.status.value }}</span>
+            </td>
+            <td class="px-6 py-4 text-white/40 text-xs">{{ order.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="5" class="px-6 py-12 text-center text-white/30">لا توجد طلبات بعد</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

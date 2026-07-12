@@ -1,0 +1,50 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}الطلبات{% endblock %}
+{% block page_title %}الطلبات{% endblock %}
+
+{% block content %}
+<div class="animate-in">
+  <div class="mb-8">
+    <h1 class="text-2xl font-black text-white">إدارة الطلبات</h1>
+    <p class="text-white/40 text-sm mt-1">{{ orders|length }} طلب مسجل</p>
+  </div>
+
+  <div class="card rounded-2xl overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full">
+        <thead>
+          <tr class="border-b border-white/5">
+            {% for h in ['#', 'UUID', 'العميل', 'المبلغ', 'الحالة', 'المعاملة', 'التاريخ', 'الفاتورة'] %}
+            <th class="text-right text-white/40 text-xs font-semibold px-4 py-3">{{ h }}</th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for order in orders %}
+          <tr class="border-b border-white/5 hover:bg-white/3 transition-colors">
+            <td class="px-4 py-3 text-white/50 text-sm">{{ order.id }}</td>
+            <td class="px-4 py-3"><code class="text-xs text-brand-400 font-mono">{{ order.uuid[:8] }}...</code></td>
+            <td class="px-4 py-3 text-white text-sm">{{ order.customer_name or '—' }}</td>
+            <td class="px-4 py-3 text-gold-400 font-bold text-sm">{{ "%.2f"|format(order.amount) }} {{ order.currency }}</td>
+            <td class="px-4 py-3">
+              <span class="badge-{{ order.status.value }} px-2 py-1 rounded-full text-xs font-semibold">{{ order.status.value }}</span>
+            </td>
+            <td class="px-4 py-3"><code class="text-xs text-white/40 font-mono">{{ order.transaction_id[:12] ~ '...' if order.transaction_id else '—' }}</code></td>
+            <td class="px-4 py-3 text-white/40 text-xs">{{ order.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+            <td class="px-4 py-3">
+              <a href="/invoice/{{ order.id }}" target="_blank"
+                 class="bg-brand-500/20 hover:bg-brand-500/30 rounded-lg px-3 py-1.5 text-brand-400 text-xs transition-colors">📄 عرض</a>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="8" class="px-6 py-16 text-center text-white/30">
+            <p class="text-4xl mb-4">📋</p>
+            <p>لا توجد طلبات بعد</p>
+          </td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

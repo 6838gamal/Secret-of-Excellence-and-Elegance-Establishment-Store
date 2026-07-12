@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}{{ company_name }}{% endblock %}
+
+{% block body %}
+<div class="min-h-screen flex flex-col items-center justify-center px-4 text-center">
+  <!-- Logo — double-click triggers admin login -->
+  <div class="mb-8 cursor-pointer select-none" ondblclick="openAdminModal()" title="الشعار">
+    <div class="w-28 h-28 gold-gradient rounded-full flex items-center justify-center mx-auto mb-4 shadow-2xl shadow-gold-500/30 hover:shadow-gold-500/50 transition-shadow duration-300">
+      <span class="text-5xl">✨</span>
+    </div>
+    <h1 class="text-3xl md:text-4xl font-black text-white leading-tight">مؤسسة سر التميز</h1>
+    <p class="text-gold-400 font-semibold text-lg mt-1">والأناقة</p>
+  </div>
+
+  <p class="text-white/60 max-w-md text-lg mb-12 leading-relaxed">
+    منصة الدفع الإلكتروني الآمنة والسريعة<br />لخدماتنا المتميزة
+  </p>
+
+  <div class="card-glass rounded-2xl p-6 max-w-sm w-full">
+    <div class="flex items-center gap-3 mb-4">
+      <div class="w-10 h-10 bg-gold-500/20 rounded-xl flex items-center justify-center text-gold-400 text-xl">🔒</div>
+      <div class="text-right">
+        <p class="text-white font-semibold text-sm">دفع آمن ومحمي</p>
+        <p class="text-white/50 text-xs">تشفير SSL كامل</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-3 mb-4">
+      <div class="w-10 h-10 bg-brand-500/20 rounded-xl flex items-center justify-center text-brand-400 text-xl">⚡</div>
+      <div class="text-right">
+        <p class="text-white font-semibold text-sm">معالجة فورية</p>
+        <p class="text-white/50 text-xs">تأكيد الدفع في ثوانٍ</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 bg-green-500/20 rounded-xl flex items-center justify-center text-green-400 text-xl">📱</div>
+      <div class="text-right">
+        <p class="text-white font-semibold text-sm">متوافق مع الجوال</p>
+        <p class="text-white/50 text-xs">ادفع من أي مكان</p>
+      </div>
+    </div>
+  </div>
+
+  <p class="text-white/20 text-xs mt-12">للدفع، استخدم الرابط الذي تلقيته</p>
+</div>
+{% endblock %}

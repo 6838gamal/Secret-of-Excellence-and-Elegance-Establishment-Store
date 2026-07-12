@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}تم الدفع بنجاح — {{ company_name }}{% endblock %}
+{% block body %}
+<div class="min-h-screen flex items-center justify-center px-4">
+  <div class="text-center animate-fade-in max-w-md w-full">
+    <div class="w-28 h-28 bg-green-500/20 border-4 border-green-400 rounded-full flex items-center justify-center mx-auto mb-6 text-5xl shadow-xl shadow-green-500/20">✅</div>
+    <h1 class="text-4xl font-black text-white mb-3">تم الدفع بنجاح!</h1>
+    <p class="text-white/60 text-lg mb-8">شكراً لك، تمت معالجة دفعتك بنجاح.</p>
+
+    {% if order_id %}
+    <div class="card-glass rounded-2xl p-6 mb-8 text-right">
+      <p class="text-white/50 text-sm mb-1">رقم الطلب</p>
+      <p class="text-white font-mono text-sm break-all">{{ order_id }}</p>
+    </div>
+    <a href="/invoice/{{ order_id }}" class="btn-gold rounded-xl px-8 py-3 inline-block mb-4 ml-2">📄 عرض الفاتورة</a>
+    {% endif %}
+
+    <br />
+    <a href="/" class="text-white/40 hover:text-white/70 transition-colors text-sm">العودة للرئيسية</a>
+  </div>
+</div>
+{% endblock %}

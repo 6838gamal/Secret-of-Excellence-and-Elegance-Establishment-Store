@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}رابط غير متاح — {{ company_name }}{% endblock %}
+{% block body %}
+<div class="min-h-screen flex items-center justify-center px-4">
+  <div class="text-center animate-fade-in max-w-md">
+    <div class="w-24 h-24 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-6 text-5xl">⛔</div>
+    <h1 class="text-3xl font-black text-white mb-4">الرابط غير متاح</h1>
+    {% if status == 'expired' %}
+    <p class="text-white/60 text-lg mb-8">انتهت صلاحية رابط الدفع هذا.</p>
+    {% elif status == 'cancelled' %}
+    <p class="text-white/60 text-lg mb-8">تم إلغاء رابط الدفع هذا.</p>
+    {% elif status == 'paid' %}
+    <p class="text-white/60 text-lg mb-8">تم الدفع بالفعل عبر هذا الرابط.</p>
+    {% else %}
+    <p class="text-white/60 text-lg mb-8">هذا الرابط غير متاح.</p>
+    {% endif %}
+    <a href="/" class="btn-gold rounded-xl px-8 py-3 inline-block">العودة للرئيسية</a>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+{% block title %}ادفع الآن — {{ company_name }}{% endblock %}
+
+{% block body %}
+<div class="min-h-screen flex items-center justify-center px-4 py-10">
+  <div class="w-full max-w-lg animate-fade-in">
+    <!-- Header -->
+    <div class="text-center mb-8">
+      <div class="w-20 h-20 gold-gradient rounded-full flex items-center justify-center mx-auto mb-4 shadow-xl shadow-gold-500/30">
+        <span class="text-3xl">✨</span>
+      </div>
+      <h1 class="text-2xl font-black text-white">{{ company_name }}</h1>
+      <p class="text-white/50 text-sm mt-1">منصة الدفع الآمنة</p>
+    </div>
+
+    <!-- Payment Card -->
+    <div class="card-glass rounded-3xl p-6 md:p-8 shadow-2xl">
+      {% if link.service %}
+      <div class="flex items-start gap-4 mb-6 pb-6 border-b border-white/10">
+        {% if link.service.image %}
+        <img src="{{ link.service.image }}" alt="{{ link.service.title }}" class="w-20 h-20 rounded-2xl object-cover flex-shrink-0" />
+        {% else %}
+        <div class="w-20 h-20 bg-brand-500/20 rounded-2xl flex items-center justify-center flex-shrink-0 text-3xl">🛍️</div>
+        {% endif %}
+        <div>
+          <h2 class="text-xl font-bold text-white">{{ link.service.title }}</h2>
+          {% if link.service.description %}
+          <p class="text-white/60 text-sm mt-1 leading-relaxed">{{ link.service.description }}</p>
+          {% endif %}
+        </div>
+      </div>
+      {% elif link.description %}
+      <div class="mb-6 pb-6 border-b border-white/10">
+        <h2 class="text-xl font-bold text-white">{{ link.description }}</h2>
+      </div>
+      {% endif %}
+
+      <!-- Price -->
+      <div class="flex items-center justify-between mb-6">
+        <span class="text-white/60">المبلغ المطلوب</span>
+        <span class="text-3xl font-black text-gold-400">{{ "%.2f"|format(link.amount) }} <span class="text-lg">{{ link.currency }}</span></span>
+      </div>
+
+      {% if link.customer_name %}
+      <div class="bg-white/5 rounded-2xl p-4 mb-6 space-y-2">
+        <p class="text-white/50 text-xs font-semibold uppercase tracking-wider">بيانات العميل</p>
+        {% if link.customer_name %}<p class="text-white">👤 {{ link.customer_name }}</p>{% endif %}
+        {% if link.customer_email %}<p class="text-white/70 text-sm">📧 {{ link.customer_email }}</p>{% endif %}
+        {% if link.customer_phone %}<p class="text-white/70 text-sm">📞 {{ link.customer_phone }}</p>{% endif %}
+      </div>
+      {% endif %}
+
+      {% if link.expires_at %}
+      <div class="flex items-center gap-2 text-orange-400 text-sm mb-6 bg-orange-500/10 rounded-xl px-4 py-2">
+        <span>⏰</span>
+        <span>ينتهي الرابط في: {{ link.expires_at.strftime('%Y-%m-%d %H:%M') }}</span>
+      </div>
+      {% endif %}
+
+      <!-- Customer Form (if not pre-filled) -->
+      {% if not link.customer_name %}
+      <div class="mb-6 space-y-3">
+        <p class="text-white/50 text-xs font-semibold uppercase tracking-wider">بياناتك</p>
+        <input id="cust_name" type="text" placeholder="الاسم الكامل" class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-gold-400 transition-colors" />
+        <input id="cust_email" type="email" placeholder="البريد الإلكتروني" class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-gold-400 transition-colors" />
+        <input id="cust_phone" type="tel" placeholder="رقم الجوال" class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-gold-400 transition-colors" />
+      </div>
+      {% endif %}
+
+      <div id="payError" class="hidden bg-red-500/20 border border-red-500/40 rounded-xl p-3 mb-4 text-red-300 text-sm text-center"></div>
+
+      <!-- Pay Button -->
+      <button onclick="initiatePayment()" id="payBtn"
+              class="w-full btn-gold rounded-2xl py-4 text-xl font-black shadow-lg">
+        ادفع الآن — {{ "%.2f"|format(link.amount) }} {{ link.currency }}
+      </button>
+
+      <div class="flex items-center justify-center gap-4 mt-4 text-white/30 text-xs">
+        <span>🔒 دفع آمن</span>
+        <span>•</span>
+        <span>⚡ معالجة فورية</span>
+        <span>•</span>
+        <span>✅ مشفر بالكامل</span>
+      </div>
+    </div>
+
+    <!-- QR Code -->
+    <div class="text-center mt-6">
+      <p class="text-white/30 text-xs mb-3">مشاركة رابط الدفع</p>
+      <img src="data:image/png;base64,{{ qr_b64 }}" alt="QR Code" class="w-28 h-28 mx-auto rounded-xl border border-white/10 p-1 bg-white" />
+    </div>
+  </div>
+</div>
+
+<script>
+  const TOKEN = "{{ link.token }}";
+  const PRE_FILLED = {{ 'true' if link.customer_name else 'false' }};
+
+  async function initiatePayment() {
+    const btn = document.getElementById('payBtn');
+    const errDiv = document.getElementById('payError');
+    errDiv.classList.add('hidden');
+    btn.disabled = true;
+    btn.textContent = 'جارٍ المعالجة...';
+
+    const payload = { payment_link_token: TOKEN };
+    if (!PRE_FILLED) {
+      payload.customer_name = document.getElementById('cust_name').value;
+      payload.customer_email = document.getElementById('cust_email').value;
+      payload.customer_phone = document.getElementById('cust_phone').value;
+    }
+
+    try {
+      const res = await fetch('/api/payment/initiate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (data.payment_url) {
+        window.location.href = data.payment_url;
+      } else {
+        errDiv.textContent = data.detail || 'حدث خطأ أثناء المعالجة';
+        errDiv.classList.remove('hidden');
+        btn.disabled = false;
+        btn.textContent = 'ادفع الآن — {{ "%.2f"|format(link.amount) }} {{ link.currency }}';
+      }
+    } catch(e) {
+      errDiv.textContent = 'خطأ في الاتصال، حاول مجدداً';
+      errDiv.classList.remove('hidden');
+      btn.disabled = false;
+      btn.textContent = 'ادفع الآن';
+    }
+  }
+</script>
+{% endblock %}

@@ -1,0 +1,2 @@
+- [FastAPI Jinja2 TemplateResponse](jinja2-template-response.md) — newer Starlette requires `request` as first positional arg, not inside the context dict.
+- [bcrypt passlib incompatibility](bcrypt-passlib.md) — passlib's bcrypt backend breaks with bcrypt v4+; use bcrypt directly instead.

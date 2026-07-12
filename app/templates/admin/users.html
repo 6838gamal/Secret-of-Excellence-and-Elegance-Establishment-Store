@@ -1,0 +1,103 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}المستخدمون{% endblock %}
+{% block page_title %}المستخدمون{% endblock %}
+
+{% block content %}
+<div class="animate-in">
+  <div class="flex items-center justify-between mb-8">
+    <div>
+      <h1 class="text-2xl font-black text-white">إدارة المستخدمين</h1>
+      <p class="text-white/40 text-sm mt-1">{{ users|length }} مستخدم مسجل</p>
+    </div>
+    <button onclick="openModal('addUserModal')" class="gold-gradient text-brand-900 font-bold px-5 py-2.5 rounded-xl">
+      + مستخدم جديد
+    </button>
+  </div>
+
+  <div class="card rounded-2xl overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full">
+        <thead>
+          <tr class="border-b border-white/5">
+            {% for h in ['#', 'الاسم', 'البريد الإلكتروني', 'الدور', 'تاريخ الإنشاء'] %}
+            <th class="text-right text-white/40 text-xs font-semibold px-6 py-3">{{ h }}</th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for u in users %}
+          <tr class="border-b border-white/5 hover:bg-white/3 transition-colors">
+            <td class="px-6 py-4 text-white/40 text-sm">{{ u.id }}</td>
+            <td class="px-6 py-4">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 bg-brand-500/30 rounded-full flex items-center justify-center text-brand-400 font-bold text-sm">{{ u.name[0] }}</div>
+                <span class="text-white font-medium">{{ u.name }}</span>
+              </div>
+            </td>
+            <td class="px-6 py-4 text-white/60 text-sm">{{ u.email }}</td>
+            <td class="px-6 py-4">
+              {% set role_colors = {'admin':'text-gold-400 bg-gold-500/15','manager':'text-blue-400 bg-blue-500/15','accountant':'text-green-400 bg-green-500/15','viewer':'text-white/50 bg-white/10'} %}
+              <span class="{{ role_colors.get(u.role.value, 'text-white/50 bg-white/10') }} px-3 py-1 rounded-full text-xs font-semibold capitalize">{{ u.role.value }}</span>
+            </td>
+            <td class="px-6 py-4 text-white/40 text-xs">{{ u.created_at.strftime('%Y-%m-%d') }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Add User Modal -->
+<div id="addUserModal" class="modal fixed inset-0 z-50 hidden items-center justify-center p-4" data-modal>
+  <div class="bg-brand-900 border border-brand-500/30 rounded-2xl w-full max-w-md p-6 animate-in">
+    <h3 class="text-xl font-bold text-white mb-5">إضافة مستخدم جديد</h3>
+    <div id="userError" class="hidden bg-red-500/20 border border-red-500/40 rounded-xl p-3 mb-4 text-red-300 text-sm"></div>
+    <form id="addUserForm" onsubmit="submitAddUser(event)" class="space-y-4">
+      <div>
+        <label class="block text-white/60 text-sm mb-1">الاسم الكامل *</label>
+        <input name="name" required placeholder="محمد أحمد"
+               class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-gold-400" />
+      </div>
+      <div>
+        <label class="block text-white/60 text-sm mb-1">البريد الإلكتروني *</label>
+        <input name="email" type="email" required placeholder="email@example.com"
+               class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-gold-400" />
+      </div>
+      <div>
+        <label class="block text-white/60 text-sm mb-1">كلمة المرور *</label>
+        <input name="password" type="password" required placeholder="••••••••" minlength="8"
+               class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-gold-400" />
+      </div>
+      <div>
+        <label class="block text-white/60 text-sm mb-1">الدور</label>
+        <select name="role" class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-gold-400">
+          {% for role in roles %}
+          <option value="{{ role }}">{{ role }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="flex gap-3 pt-2">
+        <button type="submit" class="flex-1 gold-gradient text-brand-900 font-bold py-3 rounded-xl">إضافة</button>
+        <button type="button" onclick="closeModal('addUserModal')" class="flex-1 bg-white/10 text-white py-3 rounded-xl">إلغاء</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function submitAddUser(e) {
+  e.preventDefault();
+  const form = e.target;
+  const errDiv = document.getElementById('userError');
+  errDiv.classList.add('hidden');
+  const body = new URLSearchParams({ name: form.name.value, email: form.email.value, password: form.password.value, role: form.role.value });
+  const res = await fetch('/admin/users', { method:'POST', body, headers:{'Content-Type':'application/x-www-form-urlencoded'} });
+  const data = await res.json();
+  if (data.success) { showToast('تمت إضافة المستخدم ✅'); setTimeout(() => location.reload(), 800); }
+  else { errDiv.textContent = data.message || 'خطأ'; errDiv.classList.remove('hidden'); }
+}
+</script>
+{% endblock %}

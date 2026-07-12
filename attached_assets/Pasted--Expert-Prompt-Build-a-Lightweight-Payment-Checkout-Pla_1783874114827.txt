@@ -1,0 +1,521 @@
+# Expert Prompt — Build a Lightweight Payment Checkout Platform with FastAPI, Docker, and Hidden Admin Dashboard
+
+أنت مهندس برمجيات Senior متخصص في Python وFastAPI وبناء أنظمة الدفع الإلكترونية الآمنة. مهمتك إنشاء نظام Production Ready لاستقبال المدفوعات عبر بوابة Beezati.
+
+لا تبنِ متجرًا إلكترونيًا تقليديًا، بل ابنِ منصة دفع خفيفة وسريعة تعتمد على عرض فاتورة أو خدمة وإنشاء عملية دفع مباشرة.
+
+---
+
+# فكرة المشروع
+
+إنشاء منصة Payment Checkout System تسمح لصاحب العمل بإنشاء خدمات أو فواتير، ثم مشاركة رابط دفع مع العميل.
+
+العميل يفتح الرابط:
+
+```
+https://domain.com/pay/{payment_token}
+```
+
+يشاهد تفاصيل الخدمة أو الفاتورة ثم يدفع مباشرة عبر Beezati.
+
+النظام مخصص للدفع فقط وليس لإدارة متجر كامل.
+
+---
+
+# التقنيات المطلوبة
+
+## Backend
+
+* Python 3.13
+* FastAPI
+* SQLAlchemy 2.x
+* Alembic
+* Pydantic V2
+* PostgreSQL
+* Docker
+* Docker Compose
+* Nginx
+
+## Frontend
+
+استخدم:
+
+* HTML5
+* Tailwind CSS
+* JavaScript
+* Jinja2 Templates
+
+ممنوع استخدام:
+
+* Flutter
+* React
+* Vue
+* WordPress
+* WooCommerce
+* Shopify
+
+---
+
+# هيكل المشروع
+
+استخدم Clean Architecture:
+
+```
+app/
+
+ ├── main.py
+ ├── config/
+ ├── database/
+ ├── models/
+ ├── schemas/
+ ├── repositories/
+ ├── services/
+ ├── api/
+ │    ├── public/
+ │    ├── admin/
+ │    └── payments/
+ ├── integrations/
+ │    └── beezati/
+ ├── templates/
+ ├── static/
+ ├── middleware/
+ ├── security/
+ ├── utils/
+ └── tests/
+```
+
+---
+
+# الواجهة العامة للعميل
+
+الواجهة يجب أن تكون بسيطة جدًا وسريعة.
+
+تحتوي على:
+
+* شعار الشركة.
+* اسم الخدمة.
+* وصف الخدمة.
+* السعر.
+* العملة.
+* معلومات الفاتورة.
+* زر "ادفع الآن".
+
+يجب أن تكون:
+
+* Responsive.
+* Mobile First.
+* سريعة التحميل.
+* بدون عناصر غير ضرورية.
+
+---
+
+# نظام الدخول للإدارة
+
+لا يظهر رابط الإدارة للمستخدم.
+
+طريقة الدخول:
+
+1. يوجد شعار الموقع في الصفحة الرئيسية.
+2. عند الضغط على الشعار ضغطتين متتاليتين Double Click.
+3. تظهر نافذة Modal Login.
+
+النافذة تحتوي:
+
+* Email
+* Password
+* Login Button
+
+بعد نجاح تسجيل الدخول:
+
+ينتقل المستخدم إلى:
+
+```
+/admin/dashboard
+```
+
+---
+
+# حماية الإدارة
+
+لا تعتمد على إخفاء الرابط فقط.
+
+طبق:
+
+* JWT Authentication.
+* HttpOnly Secure Cookies.
+* Password Hashing باستخدام Argon2 أو bcrypt.
+* Role Based Access Control.
+
+الأدوار:
+
+```
+Admin
+Manager
+Accountant
+Viewer
+```
+
+---
+
+# لوحة الإدارة
+
+إنشاء Dashboard كاملة.
+
+## Dashboard
+
+تعرض:
+
+* إجمالي المدفوعات.
+* عدد الطلبات.
+* المدفوعات الناجحة.
+* المدفوعات الفاشلة.
+* الإيرادات اليومية.
+* الإيرادات الشهرية.
+
+---
+
+# إدارة الخدمات
+
+إمكانية:
+
+* إضافة خدمة.
+* تعديل خدمة.
+* حذف خدمة.
+* تفعيل وتعطيل الخدمة.
+
+بيانات الخدمة:
+
+```
+id
+title
+description
+price
+currency
+image
+status
+created_at
+```
+
+---
+
+# نظام الفواتير وروابط الدفع
+
+يمكن للإدارة:
+
+* إنشاء فاتورة.
+* إنشاء رابط دفع.
+* نسخ الرابط.
+* إنشاء QR Code.
+* تحديد تاريخ انتهاء الرابط.
+* إلغاء الرابط.
+
+مثال:
+
+```
+https://domain.com/pay/a83Hd92k
+```
+
+---
+
+# قاعدة البيانات
+
+الجداول المطلوبة:
+
+## Users
+
+```
+id
+name
+email
+password_hash
+role
+created_at
+```
+
+---
+
+## Services
+
+```
+id
+title
+description
+price
+currency
+status
+created_at
+```
+
+---
+
+## Payment Links
+
+```
+id
+token
+service_id
+amount
+expires_at
+status
+created_at
+```
+
+---
+
+## Orders
+
+```
+id
+uuid
+customer_name
+customer_email
+customer_phone
+amount
+currency
+status
+transaction_id
+gateway_reference
+created_at
+paid_at
+```
+
+---
+
+## Payments
+
+```
+id
+order_id
+gateway
+transaction_id
+payment_method
+response_data
+created_at
+```
+
+---
+
+## Webhook Logs
+
+```
+id
+event
+payload
+status
+created_at
+```
+
+---
+
+## Audit Logs
+
+تسجيل:
+
+* تسجيل الدخول.
+* إنشاء فاتورة.
+* تعديل بيانات.
+* عمليات الدفع.
+* تغييرات الإدارة.
+
+---
+
+# التكامل مع Beezati
+
+أنشئ Integration كامل.
+
+يدعم:
+
+## Create Payment
+
+إنشاء عملية دفع.
+
+## Verify Payment
+
+التحقق من حالة العملية.
+
+## Webhook
+
+Endpoint:
+
+```
+POST /api/payment/beezati/webhook
+```
+
+وظيفته:
+
+* استقبال إشعار Beezati.
+* التحقق من Signature.
+* تحديث حالة الطلب.
+* تسجيل العملية.
+* منع التكرار.
+
+---
+
+# حالات الدفع
+
+استخدم:
+
+```
+Pending
+Processing
+Paid
+Failed
+Cancelled
+Expired
+Refunded
+```
+
+---
+
+# صفحات الدفع
+
+## Payment Page
+
+```
+/pay/{token}
+```
+
+## Success
+
+```
+/payment/success
+```
+
+## Failed
+
+```
+/payment/failed
+```
+
+## Invoice
+
+```
+/invoice/{id}
+```
+
+---
+
+# الفواتير PDF
+
+إنشاء PDF يحتوي:
+
+* شعار الشركة.
+* رقم الفاتورة.
+* العميل.
+* الخدمة.
+* السعر.
+* حالة الدفع.
+* رقم العملية.
+* QR Code.
+
+---
+
+# Docker
+
+أنشئ:
+
+* Dockerfile
+* docker-compose.yml
+* nginx.conf
+* .env.example
+
+الخدمات:
+
+```
+nginx
+
+fastapi
+
+postgresql
+```
+
+---
+
+# Security Requirements
+
+طبق:
+
+* HTTPS Ready.
+* CORS.
+* Rate Limiting.
+* Input Validation.
+* SQL Injection Protection.
+* XSS Protection.
+* Secure Headers.
+* Audit Logging.
+* Webhook Signature Validation.
+
+---
+
+# Testing
+
+استخدم:
+
+* pytest
+
+اختبر:
+
+* Authentication.
+* Permissions.
+* Payment Creation.
+* Webhook.
+* Database.
+* API Validation.
+
+---
+
+# جودة الكود
+
+يجب أن يكون:
+
+* Clean Code.
+* Type Hints.
+* Modular.
+* قابل للتوسع.
+* موثق بالكامل.
+* جاهز للإنتاج.
+
+---
+
+# طريقة التنفيذ المطلوبة
+
+نفذ المشروع على مراحل:
+
+## Phase 1
+
+إعداد المشروع + Docker + Database + Authentication.
+
+## Phase 2
+
+واجهة الدفع العامة.
+
+## Phase 3
+
+لوحة الإدارة المخفية.
+
+## Phase 4
+
+نظام الخدمات والفواتير وروابط الدفع.
+
+## Phase 5
+
+تكامل Beezati API + Webhook.
+
+## Phase 6
+
+التقارير + PDF + QR Code.
+
+## Phase 7
+
+الأمان والاختبارات والنشر.
+
+في كل مرحلة:
+
+* اشرح ما سيتم عمله.
+* أنشئ الملفات.
+* اكتب الكود كاملًا.
+* اشرح التشغيل.
+* لا تنتقل للمرحلة التالية حتى تكتمل الحالية.
+
+النتيجة النهائية المطلوبة:
+نظام دفع إلكتروني خفيف وسريع Production Ready يمكن نشره مباشرة باستخدام Docker ويستقبل المدفوعات عبر Beezati.

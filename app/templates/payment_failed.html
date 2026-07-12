@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}فشل الدفع — {{ company_name }}{% endblock %}
+{% block body %}
+<div class="min-h-screen flex items-center justify-center px-4">
+  <div class="text-center animate-fade-in max-w-md">
+    <div class="w-28 h-28 bg-red-500/20 border-4 border-red-400 rounded-full flex items-center justify-center mx-auto mb-6 text-5xl shadow-xl shadow-red-500/20">❌</div>
+    <h1 class="text-4xl font-black text-white mb-3">فشلت عملية الدفع</h1>
+    <p class="text-white/60 text-lg mb-8">عذراً، لم يتم إتمام الدفع. يرجى المحاولة مجدداً.</p>
+
+    {% if order_id %}
+    <div class="card-glass rounded-2xl p-4 mb-8 text-right">
+      <p class="text-white/50 text-xs">رقم الطلب: <span class="font-mono">{{ order_id }}</span></p>
+    </div>
+    {% endif %}
+
+    <a href="javascript:history.back()" class="btn-gold rounded-xl px-8 py-3 inline-block mb-4">↩️ المحاولة مجدداً</a>
+    <br />
+    <a href="/" class="text-white/40 hover:text-white/70 transition-colors text-sm">العودة للرئيسية</a>
+  </div>
+</div>
+{% endblock %}
