@@ -32,5 +32,18 @@ def get_db():
 
 
 def create_tables():
+    """
+    إنشاء الجداول إن لم تكن موجودة.
+    checkfirst=True يتجنب خطأ "already exists" عند تشغيل عامل واحد،
+    لكن مع عدة عمال متوازين على SQLite يمكن أن تحدث سباقة (race condition).
+    نعالجها بـ try/except لأن الحالة آمنة: الجدول موجود بالفعل.
+    """
     from app.models import user, service, payment_link, order, payment, logs
-    Base.metadata.create_all(bind=engine)
+    try:
+        Base.metadata.create_all(bind=engine, checkfirst=True)
+    except Exception as exc:
+        if "already exists" in str(exc):
+            # عامل آخر سبق وأنشأ الجداول — هذا طبيعي مع multi-worker
+            pass
+        else:
+            raise

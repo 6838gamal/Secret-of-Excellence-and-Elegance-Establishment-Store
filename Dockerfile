@@ -22,8 +22,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application code
 COPY . .
 
-# Create static directory
-RUN mkdir -p app/static
+# Create required directories
+RUN mkdir -p app/static data
 
 # Non-root user for security
 RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
@@ -34,4 +34,6 @@ EXPOSE 5000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
     CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:5000/health')"
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "5000", "--workers", "2"]
+# WEB_CONCURRENCY يُضبط من بيئة التشغيل (Render يضبطه تلقائياً).
+# نستخدم 1 كافتراضي لأن SQLite لا يدعم الكتابة المتوازية بأمان.
+CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port 5000 --workers ${WEB_CONCURRENCY:-1}"]
