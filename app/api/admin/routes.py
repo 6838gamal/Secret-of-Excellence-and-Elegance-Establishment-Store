@@ -19,7 +19,7 @@ from app.repositories.payment_repo import (
     create_payment_link, get_all_links, get_link_by_id, cancel_link,
     get_all_orders, get_dashboard_stats, log_audit
 )
-from app.schemas.service import ServiceUpdate
+from app.schemas.service import ServiceUpdate, ServiceCreate
 from app.schemas.payment import PaymentLinkCreate
 from app.security.jwt import create_access_token
 from app.models.logs import AuditAction
@@ -142,6 +142,38 @@ async def delete_service_endpoint(
     delete_service(db, svc)
     log_audit(db, AuditAction.delete_service, user_id=current_user.id, description=f"Delete service {service_id}")
     return JSONResponse({"success": True})
+
+
+# ── Services JSON API (used by payment links page) ─────────
+@router.get("/api/services")
+async def list_services_json(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_any_staff),
+):
+    services = get_all_services(db)
+    return JSONResponse([{
+        "id": s.id,
+        "title": s.title,
+        "description": s.description or "",
+        "price": s.price,
+        "currency": s.currency,
+        "status": s.status,
+    } for s in services])
+
+
+@router.post("/api/services")
+async def create_service_json(
+    data: ServiceCreate,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin_or_manager),
+):
+    svc = create_service(db, title=data.title, description=data.description or "",
+                         price=data.price, currency=data.currency)
+    log_audit(db, AuditAction.create_service, user_id=current_user.id, description=f"Service: {data.title}")
+    return JSONResponse({"success": True, "id": svc.id, "title": svc.title,
+                         "price": svc.price, "currency": svc.currency,
+                         "description": svc.description or "", "status": svc.status})
 
 
 # ── Payment Links ──────────────────────────────────────────

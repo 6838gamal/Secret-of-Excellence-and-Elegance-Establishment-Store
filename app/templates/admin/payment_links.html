@@ -65,38 +65,54 @@
   </div>
 </div>
 
-<!-- Create Link Modal -->
+<!-- ═══════════════════════════════════════════════════════
+     Create Link Modal
+     ═══════════════════════════════════════════════════════ -->
 <div id="createLinkModal" class="modal fixed inset-0 z-50 hidden items-center justify-center p-4" data-modal>
   <div class="bg-brand-900 border border-brand-500/30 rounded-2xl w-full max-w-lg p-6 animate-in max-h-[90vh] overflow-y-auto">
     <h3 class="text-xl font-bold text-white mb-5">إنشاء رابط دفع</h3>
     <form id="createLinkForm" onsubmit="submitCreateLink(event)" class="space-y-4">
+
+      <!-- Service selector + manage button -->
       <div>
-        <label class="block text-white/60 text-sm mb-1">الخدمة (اختياري)</label>
-        <select name="service_id" class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-gold-400">
+        <div class="flex items-center justify-between mb-1">
+          <label class="text-white/60 text-sm">الخدمة / المنتج (اختياري)</label>
+          <button type="button" onclick="openServicesManager()"
+                  class="text-xs text-brand-400 hover:text-brand-300 flex items-center gap-1 transition-colors">
+            ⚙️ إدارة الخدمات
+          </button>
+        </div>
+        <select id="linkServiceSelect" name="service_id" onchange="onServiceSelected(this)"
+                class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-gold-400">
           <option value="">— بدون خدمة محددة —</option>
           {% for svc in services %}
-          <option value="{{ svc.id }}">{{ svc.title }} — {{ "%.2f"|format(svc.price) }} {{ svc.currency }}</option>
+          <option value="{{ svc.id }}" data-price="{{ svc.price }}" data-currency="{{ svc.currency }}" data-desc="{{ svc.description or '' }}">
+            {{ svc.title }} — {{ "%.2f"|format(svc.price) }} {{ svc.currency }}
+          </option>
           {% endfor %}
         </select>
       </div>
+
       <div class="grid grid-cols-2 gap-3">
         <div>
           <label class="block text-white/60 text-sm mb-1">المبلغ *</label>
-          <input name="amount" type="number" step="0.01" min="0.01" required placeholder="0.00"
+          <input id="linkAmount" name="amount" type="number" step="0.01" min="0.01" required placeholder="0.00"
                  class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-gold-400" />
         </div>
         <div>
           <label class="block text-white/60 text-sm mb-1">العملة</label>
-          <select name="currency" class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-gold-400">
+          <select id="linkCurrency" name="currency" class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-gold-400">
             <option value="SAR">SAR</option><option value="USD">USD</option><option value="AED">AED</option><option value="KWD">KWD</option>
           </select>
         </div>
       </div>
+
       <div>
         <label class="block text-white/60 text-sm mb-1">وصف الفاتورة</label>
-        <input name="description" placeholder="وصف الخدمة أو الفاتورة..."
+        <input id="linkDescription" name="description" placeholder="وصف الخدمة أو الفاتورة..."
                class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-gold-400" />
       </div>
+
       <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
         <div>
           <label class="block text-white/60 text-sm mb-1">اسم العميل</label>
@@ -114,16 +130,95 @@
                  class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-gold-400" />
         </div>
       </div>
+
       <div>
         <label class="block text-white/60 text-sm mb-1">تاريخ الانتهاء (اختياري)</label>
         <input name="expires_at" type="datetime-local"
                class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-gold-400" />
       </div>
+
       <div class="flex gap-3 pt-2">
         <button type="submit" class="flex-1 gold-gradient text-brand-900 font-bold py-3 rounded-xl">إنشاء الرابط</button>
         <button type="button" onclick="closeModal('createLinkModal')" class="flex-1 bg-white/10 text-white py-3 rounded-xl">إلغاء</button>
       </div>
     </form>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     Services Manager Modal
+     ═══════════════════════════════════════════════════════ -->
+<div id="servicesManagerModal" class="modal fixed inset-0 z-[60] hidden items-center justify-center p-4" data-modal>
+  <div class="bg-brand-900 border border-brand-500/30 rounded-2xl w-full max-w-2xl animate-in flex flex-col max-h-[90vh]">
+
+    <!-- Header -->
+    <div class="flex items-center justify-between p-6 border-b border-white/10 flex-shrink-0">
+      <h3 class="text-xl font-bold text-white">إدارة الخدمات والمنتجات</h3>
+      <button onclick="closeServicesManager()" class="text-white/40 hover:text-white text-2xl leading-none">×</button>
+    </div>
+
+    <!-- Body -->
+    <div class="overflow-y-auto flex-1 p-6 space-y-5">
+
+      <!-- Add / Edit Form -->
+      <div class="bg-white/5 border border-white/10 rounded-2xl p-5">
+        <h4 id="svcFormTitle" class="text-white font-semibold mb-4">➕ إضافة خدمة جديدة</h4>
+        <form id="svcForm" onsubmit="submitServiceForm(event)" class="space-y-3">
+          <input type="hidden" id="svcEditId" value="">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div class="md:col-span-2">
+              <label class="block text-white/60 text-xs mb-1">اسم الخدمة / المنتج *</label>
+              <input id="svcTitle" required placeholder="مثال: تصميم شعار احترافي"
+                     class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-2.5 text-white placeholder-white/30 focus:outline-none focus:border-gold-400 text-sm" />
+            </div>
+            <div>
+              <label class="block text-white/60 text-xs mb-1">السعر *</label>
+              <input id="svcPrice" type="number" step="0.01" min="0.01" required placeholder="0.00"
+                     class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-2.5 text-white placeholder-white/30 focus:outline-none focus:border-gold-400 text-sm" />
+            </div>
+            <div>
+              <label class="block text-white/60 text-xs mb-1">العملة</label>
+              <select id="svcCurrency" class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-gold-400 text-sm">
+                <option value="SAR">SAR — ريال سعودي</option>
+                <option value="USD">USD — دولار أمريكي</option>
+                <option value="AED">AED — درهم إماراتي</option>
+                <option value="KWD">KWD — دينار كويتي</option>
+              </select>
+            </div>
+            <div class="md:col-span-2">
+              <label class="block text-white/60 text-xs mb-1">الوصف (اختياري)</label>
+              <textarea id="svcDesc" rows="2" placeholder="وصف تفصيلي للخدمة أو المنتج..."
+                        class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-2.5 text-white placeholder-white/30 focus:outline-none focus:border-gold-400 text-sm resize-none"></textarea>
+            </div>
+          </div>
+          <div class="flex gap-2 pt-1">
+            <button type="submit" class="gold-gradient text-brand-900 font-bold px-5 py-2 rounded-xl text-sm">
+              <span id="svcSubmitLabel">حفظ الخدمة</span>
+            </button>
+            <button type="button" onclick="resetServiceForm()" id="svcCancelEdit"
+                    class="hidden bg-white/10 text-white px-4 py-2 rounded-xl text-sm">إلغاء التعديل</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Services List -->
+      <div>
+        <div class="flex items-center justify-between mb-3">
+          <h4 class="text-white/60 text-sm font-semibold">الخدمات المسجلة</h4>
+          <span id="svcCount" class="text-white/30 text-xs"></span>
+        </div>
+        <div id="svcList" class="space-y-2">
+          <div class="text-center py-8 text-white/30 text-sm">جارٍ التحميل...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="p-6 border-t border-white/10 flex-shrink-0">
+      <button onclick="closeServicesManager()" class="w-full bg-white/10 hover:bg-white/15 text-white font-semibold py-3 rounded-xl transition-colors">
+        العودة لإنشاء الرابط
+      </button>
+    </div>
   </div>
 </div>
 
@@ -165,6 +260,10 @@
 
 {% block scripts %}
 <script>
+/* ─── In-memory services cache ─────────────────────────── */
+let allServices = [];
+
+/* ─── Create link ─────────────────────────────────────── */
 async function submitCreateLink(e) {
   e.preventDefault();
   const form = e.target;
@@ -189,6 +288,19 @@ async function submitCreateLink(e) {
   } else { showToast(result.detail || 'خطأ', 'error'); }
 }
 
+/* ─── Auto-fill from service selection ────────────────── */
+function onServiceSelected(sel) {
+  const opt = sel.options[sel.selectedIndex];
+  if (!opt.value) return;
+  const price    = opt.dataset.price;
+  const currency = opt.dataset.currency;
+  const desc     = opt.dataset.desc;
+  if (price)    document.getElementById('linkAmount').value = parseFloat(price).toFixed(2);
+  if (currency) document.getElementById('linkCurrency').value = currency;
+  if (desc)     document.getElementById('linkDescription').value = desc;
+}
+
+/* ─── Cancel / QR ────────────────────────────────────── */
 async function cancelLink(id) {
   if (!confirm('إلغاء هذا الرابط؟')) return;
   const res = await fetch(`/admin/links/${id}/cancel`, { method:'POST' });
@@ -214,6 +326,178 @@ function copyLink(url) {
     document.execCommand('copy'); document.body.removeChild(el);
   });
   showToast('تم نسخ الرابط 📋');
+}
+
+/* ══════════════════════════════════════════════════════════
+   Services Manager
+   ══════════════════════════════════════════════════════════ */
+
+async function openServicesManager() {
+  openModal('servicesManagerModal');
+  await loadServices();
+}
+
+function closeServicesManager() {
+  closeModal('servicesManagerModal');
+  refreshLinkDropdown();
+}
+
+async function loadServices() {
+  const res = await fetch('/admin/api/services');
+  allServices = await res.json();
+  renderServicesList();
+}
+
+function renderServicesList() {
+  const list = document.getElementById('svcList');
+  document.getElementById('svcCount').textContent = `${allServices.length} خدمة`;
+
+  if (!allServices.length) {
+    list.innerHTML = `<div class="text-center py-8 text-white/30 text-sm">
+      <p class="text-3xl mb-2">🛍️</p><p>لا توجد خدمات بعد — أضف أول خدمة أعلاه</p>
+    </div>`;
+    return;
+  }
+
+  list.innerHTML = allServices.map(s => `
+    <div class="flex items-center gap-3 bg-white/5 hover:bg-white/8 border border-white/10 rounded-xl px-4 py-3 transition-colors" id="svc-row-${s.id}">
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center gap-2 flex-wrap">
+          <span class="text-white font-semibold text-sm">${escHtml(s.title)}</span>
+          <span class="${s.status ? 'text-green-400 bg-green-500/10' : 'text-red-400 bg-red-500/10'} text-xs px-2 py-0.5 rounded-full">
+            ${s.status ? 'نشطة' : 'معطلة'}
+          </span>
+        </div>
+        ${s.description ? `<p class="text-white/40 text-xs mt-0.5 truncate">${escHtml(s.description)}</p>` : ''}
+        <p class="text-gold-400 font-bold text-sm mt-1">${parseFloat(s.price).toFixed(2)} ${escHtml(s.currency)}</p>
+      </div>
+      <div class="flex gap-1.5 flex-shrink-0">
+        <button onclick="startEditService(${s.id})"
+                class="bg-brand-500/20 hover:bg-brand-500/30 text-brand-400 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors">✏️ تعديل</button>
+        <button onclick="toggleServiceStatus(${s.id}, ${s.status})"
+                class="${s.status ? 'bg-orange-500/20 hover:bg-orange-500/30 text-orange-400' : 'bg-green-500/20 hover:bg-green-500/30 text-green-400'} rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors">
+          ${s.status ? '🔴 تعطيل' : '🟢 تفعيل'}
+        </button>
+        <button onclick="deleteServiceFromManager(${s.id})"
+                class="bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg px-2.5 py-1.5 text-xs transition-colors">🗑️</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+/* ── Add / Edit form ─────────────────────────────────── */
+async function submitServiceForm(e) {
+  e.preventDefault();
+  const id    = document.getElementById('svcEditId').value;
+  const title = document.getElementById('svcTitle').value.trim();
+  const price = parseFloat(document.getElementById('svcPrice').value);
+  const curr  = document.getElementById('svcCurrency').value;
+  const desc  = document.getElementById('svcDesc').value.trim();
+
+  if (!title || !price) { showToast('يرجى تعبئة الاسم والسعر', 'error'); return; }
+
+  const payload = { title, price, currency: curr, description: desc || null };
+  let res;
+  if (id) {
+    res = await fetch(`/admin/services/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+  } else {
+    res = await fetch('/admin/api/services', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...payload, status: true }),
+    });
+  }
+
+  const result = await res.json();
+  if (result.success) {
+    showToast(id ? 'تم تحديث الخدمة ✅' : 'تمت إضافة الخدمة ✅');
+    resetServiceForm();
+    await loadServices();
+  } else {
+    showToast(result.detail || 'حدث خطأ', 'error');
+  }
+}
+
+function startEditService(id) {
+  const s = allServices.find(x => x.id === id);
+  if (!s) return;
+  document.getElementById('svcEditId').value    = s.id;
+  document.getElementById('svcTitle').value     = s.title;
+  document.getElementById('svcPrice').value     = s.price;
+  document.getElementById('svcCurrency').value  = s.currency;
+  document.getElementById('svcDesc').value      = s.description || '';
+  document.getElementById('svcFormTitle').textContent = '✏️ تعديل الخدمة';
+  document.getElementById('svcSubmitLabel').textContent = 'حفظ التعديلات';
+  document.getElementById('svcCancelEdit').classList.remove('hidden');
+  // Scroll to form
+  document.getElementById('svcForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function resetServiceForm() {
+  document.getElementById('svcEditId').value   = '';
+  document.getElementById('svcTitle').value    = '';
+  document.getElementById('svcPrice').value    = '';
+  document.getElementById('svcCurrency').value = 'SAR';
+  document.getElementById('svcDesc').value     = '';
+  document.getElementById('svcFormTitle').textContent   = '➕ إضافة خدمة جديدة';
+  document.getElementById('svcSubmitLabel').textContent = 'حفظ الخدمة';
+  document.getElementById('svcCancelEdit').classList.add('hidden');
+}
+
+async function toggleServiceStatus(id, currentStatus) {
+  const res = await fetch(`/admin/services/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status: !currentStatus }),
+  });
+  const result = await res.json();
+  if (result.success) {
+    showToast(!currentStatus ? 'تم تفعيل الخدمة 🟢' : 'تم تعطيل الخدمة 🔴');
+    await loadServices();
+  } else {
+    showToast('حدث خطأ', 'error');
+  }
+}
+
+async function deleteServiceFromManager(id) {
+  const svc = allServices.find(x => x.id === id);
+  const name = svc ? svc.title : `#${id}`;
+  if (!confirm(`حذف الخدمة "${name}"؟ لا يمكن التراجع عن هذا الإجراء.`)) return;
+  const res = await fetch(`/admin/services/${id}`, { method: 'DELETE' });
+  const result = await res.json();
+  if (result.success) {
+    showToast('تم حذف الخدمة 🗑️');
+    await loadServices();
+  } else {
+    showToast(result.detail || 'حدث خطأ', 'error');
+  }
+}
+
+/* ── Refresh the link-creation dropdown after managing ─── */
+async function refreshLinkDropdown() {
+  const res = await fetch('/admin/api/services');
+  const services = await res.json();
+  const active = services.filter(s => s.status);
+  const sel = document.getElementById('linkServiceSelect');
+  const current = sel.value;
+  sel.innerHTML = '<option value="">— بدون خدمة محددة —</option>' +
+    active.map(s =>
+      `<option value="${s.id}" data-price="${s.price}" data-currency="${escHtml(s.currency)}" data-desc="${escHtml(s.description || '')}"
+        ${String(s.id) === current ? 'selected' : ''}>
+        ${escHtml(s.title)} — ${parseFloat(s.price).toFixed(2)} ${escHtml(s.currency)}
+      </option>`
+    ).join('');
+}
+
+/* ── Utility ─────────────────────────────────────────── */
+function escHtml(str) {
+  return String(str)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 </script>
 {% endblock %}
