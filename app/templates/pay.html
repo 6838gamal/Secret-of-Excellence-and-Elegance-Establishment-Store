@@ -196,26 +196,39 @@ async function initMoyasar() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ payment_link_token: TOKEN, ...customer }),
     });
-    const data = await res.json();
-    if (!res.ok) { showErr(data.detail || 'خطأ في تهيئة ميسر'); if (loader) loader.classList.add('hidden'); return; }
+
+    let data;
+    const rawText = await res.text();
+    try { data = JSON.parse(rawText); } catch (_) { data = {}; }
+
+    if (!res.ok) {
+      const detail = data.detail || rawText || 'خطأ غير معروف';
+      showErr(`[${res.status}] ${detail}`);
+      if (loader) loader.classList.add('hidden');
+      console.error('Moyasar prepare failed:', res.status, rawText);
+      return;
+    }
 
     if (loader) loader.classList.add('hidden');
 
     Moyasar.init({
-      element:            '.mysr-form',
-      amount:             data.amount_halalas,
-      currency:           data.currency,
-      description:        data.description,
+      element:             '.mysr-form',
+      amount:              data.amount_halalas,
+      currency:            data.currency,
+      description:         data.description,
       publishable_api_key: data.publishable_key,
-      callback_url:       data.callback_url,
-      methods:            ['creditcard', 'stcpay', 'applepay'],
-      on_initiating: () => {
-        document.querySelector('.mysr-form .btn-primary') && null; // Moyasar handles loading
+      callback_url:        data.callback_url,
+      methods:             ['creditcard', 'stcpay', 'applepay'],
+      on_error: (err) => {
+        const msg = (err && (err.message || err.type || JSON.stringify(err))) || 'خطأ ميسر';
+        showErr(`ميسر: ${msg}`);
+        console.error('Moyasar error:', err);
       },
     });
     moyasarReady = true;
   } catch (e) {
-    showErr('خطأ في الاتصال — حاول مجدداً');
+    showErr(`خطأ في الاتصال: ${e.message || e}`);
+    console.error('initMoyasar exception:', e);
     if (loader) loader.classList.add('hidden');
   }
 }
