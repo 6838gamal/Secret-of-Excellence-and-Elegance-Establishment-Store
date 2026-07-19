@@ -40,14 +40,14 @@ async def admin_login(
 ):
     user = get_user_by_email(db, email)
     if not user or not verify_password(password, user.password_hash):
-        log_audit(db, AuditAction.login, description=f"Failed login: {email}", ip=request.client.host)
+        log_audit(db, AuditAction.login, description=f"Failed login: {email}", ip=request.client.host if request.client else None)
         return JSONResponse(
             {"success": False, "message": "البريد الإلكتروني أو كلمة المرور غير صحيحة"},
             status_code=401
         )
 
     token = create_access_token({"sub": str(user.id), "role": user.role.value})
-    log_audit(db, AuditAction.login, user_id=user.id, description="Login success", ip=request.client.host)
+    log_audit(db, AuditAction.login, user_id=user.id, description="Login success", ip=request.client.host if request.client else None)
 
     response = JSONResponse({"success": True, "redirect": "/admin/dashboard"})
     response.set_cookie(

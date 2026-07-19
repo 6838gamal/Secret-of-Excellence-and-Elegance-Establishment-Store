@@ -77,7 +77,7 @@ async def initiate_payment(
         payment_url    = result.get("payment_url")
         update_order_status(db, order, OrderStatus.processing, transaction_id=transaction_id)
         create_payment_record(db, order.id, "beezati", json.dumps(result), transaction_id=transaction_id)
-        log_audit(db, AuditAction.payment, description=f"Order {order.uuid} initiated via beezati", ip=request.client.host)
+        log_audit(db, AuditAction.payment, description=f"Order {order.uuid} initiated via beezati", ip=request.client.host if request.client else None)
         return {"payment_url": payment_url, "order_uuid": order.uuid}
     except BeezatiError as e:
         update_order_status(db, order, OrderStatus.failed)
@@ -183,7 +183,7 @@ async def moyasar_prepare(
     )
 
     update_order_status(db, order, OrderStatus.processing)
-    log_audit(db, AuditAction.payment, description=f"Moyasar prepare order {order.uuid}", ip=request.client.host)
+    log_audit(db, AuditAction.payment, description=f"Moyasar prepare order {order.uuid}", ip=request.client.host if request.client else None)
 
     return {
         "order_uuid":     order.uuid,
