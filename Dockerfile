@@ -36,4 +36,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
 
 # WEB_CONCURRENCY يُضبط من بيئة التشغيل (Render يضبطه تلقائياً).
 # نستخدم 1 كافتراضي لأن SQLite لا يدعم الكتابة المتوازية بأمان.
-CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port 5000 --workers ${WEB_CONCURRENCY:-1}"]
+CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port 5000 --workers ${WEB_CONCURRENCY:-1} --proxy-headers --forwarded-allow-ips='*'"]
