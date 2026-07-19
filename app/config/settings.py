@@ -28,6 +28,15 @@ class Settings(BaseSettings):
     BEEZATI_BASE_URL: str = "https://api.beezati.com/v1"
     BEEZATI_WEBHOOK_SECRET: str = ""
 
+    # ─── PayPal ───────────────────────────────────────────────────────────────
+    PAYPAL_CLIENT_ID: str = ""
+    PAYPAL_CLIENT_SECRET: str = ""
+    PAYPAL_SANDBOX: bool = True          # True = sandbox, False = production
+
+    # ─── Moyasar ─────────────────────────────────────────────────────────────
+    MOYASAR_PUBLISHABLE_KEY: str = ""
+    MOYASAR_SECRET_KEY: str = ""
+
     # ─── Admin Seed ──────────────────────────────────────────────────────────
     ADMIN_EMAIL: str = "admin@tamayoz.com"
     ADMIN_PASSWORD: str = "Admin@123456"

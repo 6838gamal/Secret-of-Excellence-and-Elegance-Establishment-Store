@@ -43,7 +43,24 @@ def create_tables():
         Base.metadata.create_all(bind=engine, checkfirst=True)
     except Exception as exc:
         if "already exists" in str(exc):
-            # عامل آخر سبق وأنشأ الجداول — هذا طبيعي مع multi-worker
             pass
         else:
             raise
+
+    # ── Column migrations (add new columns to existing tables) ──
+    _run_column_migrations()
+
+
+def _run_column_migrations():
+    """Add new columns to existing tables without dropping data."""
+    from sqlalchemy import text, inspect as sa_inspect
+    inspector = sa_inspect(engine)
+    with engine.connect() as conn:
+        # orders.gateway — added when PayPal/Moyasar support was introduced
+        existing_cols = [c["name"] for c in inspector.get_columns("orders")]
+        if "gateway" not in existing_cols:
+            try:
+                conn.execute(text("ALTER TABLE orders ADD COLUMN gateway VARCHAR(50) DEFAULT 'beezati'"))
+                conn.commit()
+            except Exception:
+                pass  # Already exists or SQLite race

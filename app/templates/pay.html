@@ -1,10 +1,38 @@
 {% extends "base.html" %}
 {% block title %}ادفع الآن — {{ company_name }}{% endblock %}
 
+{% block head %}
+{% if paypal_enabled %}
+<script src="https://www.paypal.com/sdk/js?client-id={{ paypal_client_id }}&currency={{ link.currency }}&locale=ar_SA{% if paypal_sandbox %}&debug=false{% endif %}" defer></script>
+{% endif %}
+{% if moyasar_enabled %}
+<link rel="stylesheet" href="https://cdn.moyasar.com/mpf/1.14.1/moyasar.css" />
+<script src="https://cdn.moyasar.com/mpf/1.14.1/moyasar.js"></script>
+{% endif %}
+<style>
+  .gateway-card { transition: all .2s; cursor: pointer; border: 2px solid transparent; }
+  .gateway-card:hover { border-color: rgba(255,255,255,.2); }
+  .gateway-card.selected { border-color: #d4a017; background: rgba(212,160,23,.08); }
+  .gateway-card.selected .gw-check { display:flex; }
+  .gw-check { display:none; }
+
+  .mysr-form .moyasar-payment-methods { flex-direction: column; gap: 8px; }
+  .mysr-form input { background: rgba(255,255,255,.1) !important; border: 1px solid rgba(255,255,255,.2) !important;
+    border-radius: 12px !important; color: #fff !important; padding: 12px 16px !important; }
+  .mysr-form label { color: rgba(255,255,255,.6) !important; font-size:.85rem !important; }
+  .mysr-form .btn-primary { background: linear-gradient(135deg,#d4a017,#f0c040) !important;
+    color: #1a0e00 !important; font-weight:800 !important; border-radius:14px !important;
+    padding:14px !important; font-size:1.1rem !important; border:none !important; }
+  .mysr-form .payment-method-container { background: rgba(255,255,255,.05) !important;
+    border: 1px solid rgba(255,255,255,.1) !important; border-radius:14px !important; padding:16px !important; }
+</style>
+{% endblock head %}
+
 {% block body %}
 <div class="min-h-screen flex items-center justify-center px-4 py-10">
   <div class="w-full max-w-lg animate-fade-in">
-    <!-- Header -->
+
+    <!-- Logo / Header -->
     <div class="text-center mb-8">
       <div class="w-20 h-20 gold-gradient rounded-full flex items-center justify-center mx-auto mb-4 shadow-xl shadow-gold-500/30">
         <span class="text-3xl">✨</span>
@@ -15,6 +43,8 @@
 
     <!-- Payment Card -->
     <div class="card-glass rounded-3xl p-6 md:p-8 shadow-2xl">
+
+      <!-- Service / Description -->
       {% if link.service %}
       <div class="flex items-start gap-4 mb-6 pb-6 border-b border-white/10">
         {% if link.service.image %}
@@ -35,16 +65,20 @@
       </div>
       {% endif %}
 
-      <!-- Price -->
+      <!-- Amount -->
       <div class="flex items-center justify-between mb-6">
         <span class="text-white/60">المبلغ المطلوب</span>
-        <span class="text-3xl font-black text-gold-400">{{ "%.2f"|format(link.amount) }} <span class="text-lg">{{ link.currency }}</span></span>
+        <span class="text-3xl font-black text-gold-400">
+          {{ "%.2f"|format(link.amount) }}
+          <span class="text-lg font-normal text-white/50">{{ link.currency }}</span>
+        </span>
       </div>
 
+      <!-- Pre-filled customer info -->
       {% if link.customer_name %}
-      <div class="bg-white/5 rounded-2xl p-4 mb-6 space-y-2">
-        <p class="text-white/50 text-xs font-semibold uppercase tracking-wider">بيانات العميل</p>
-        {% if link.customer_name %}<p class="text-white">👤 {{ link.customer_name }}</p>{% endif %}
+      <div class="bg-white/5 rounded-2xl p-4 mb-6 space-y-1.5">
+        <p class="text-white/40 text-xs font-semibold uppercase tracking-wider mb-2">بيانات العميل</p>
+        <p class="text-white text-sm">👤 {{ link.customer_name }}</p>
         {% if link.customer_email %}<p class="text-white/70 text-sm">📧 {{ link.customer_email }}</p>{% endif %}
         {% if link.customer_phone %}<p class="text-white/70 text-sm">📞 {{ link.customer_phone }}</p>{% endif %}
       </div>
@@ -57,80 +91,289 @@
       </div>
       {% endif %}
 
-      <!-- Customer Form (if not pre-filled) -->
+      <!-- Customer form (if not pre-filled) -->
       {% if not link.customer_name %}
-      <div class="mb-6 space-y-3">
-        <p class="text-white/50 text-xs font-semibold uppercase tracking-wider">بياناتك</p>
-        <input id="cust_name" type="text" placeholder="الاسم الكامل" class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-gold-400 transition-colors" />
-        <input id="cust_email" type="email" placeholder="البريد الإلكتروني" class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-gold-400 transition-colors" />
-        <input id="cust_phone" type="tel" placeholder="رقم الجوال" class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-gold-400 transition-colors" />
+      <div id="customerForm" class="mb-6 space-y-3">
+        <p class="text-white/40 text-xs font-semibold uppercase tracking-wider">بياناتك</p>
+        <input id="cust_name"  type="text"  placeholder="الاسم الكامل *" required
+               class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-gold-400 transition-colors" />
+        <input id="cust_email" type="email" placeholder="البريد الإلكتروني"
+               class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-gold-400 transition-colors" />
+        <input id="cust_phone" type="tel"   placeholder="رقم الجوال"
+               class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-gold-400 transition-colors" />
       </div>
       {% endif %}
 
-      <div id="payError" class="hidden bg-red-500/20 border border-red-500/40 rounded-xl p-3 mb-4 text-red-300 text-sm text-center"></div>
+      <!-- ─── Gateway Selection ─────────────────────────── -->
+      {% if moyasar_enabled or paypal_enabled %}
+      <div class="mb-6">
+        <p class="text-white/40 text-xs font-semibold uppercase tracking-wider mb-3">اختر طريقة الدفع</p>
+        <div class="grid grid-cols-{{ '2' if moyasar_enabled and paypal_enabled else '1' }} gap-3">
 
-      <!-- Pay Button -->
-      <button onclick="initiatePayment()" id="payBtn"
+          {% if moyasar_enabled %}
+          <button type="button" onclick="selectGateway('moyasar')"
+                  id="gw-moyasar"
+                  class="gateway-card bg-white/5 rounded-2xl p-4 text-center relative">
+            <div class="gw-check absolute top-2 left-2 w-5 h-5 bg-gold-400 rounded-full items-center justify-center">
+              <span class="text-black text-xs font-bold">✓</span>
+            </div>
+            <!-- Moyasar logo approximation -->
+            <div class="text-2xl mb-1">💳</div>
+            <p class="text-white font-bold text-sm">ميسر</p>
+            <p class="text-white/40 text-xs mt-0.5">بطاقة · STC Pay · Apple Pay</p>
+          </button>
+          {% endif %}
+
+          {% if paypal_enabled %}
+          <button type="button" onclick="selectGateway('paypal')"
+                  id="gw-paypal"
+                  class="gateway-card bg-white/5 rounded-2xl p-4 text-center relative">
+            <div class="gw-check absolute top-2 left-2 w-5 h-5 bg-gold-400 rounded-full items-center justify-center">
+              <span class="text-black text-xs font-bold">✓</span>
+            </div>
+            <div class="text-2xl mb-1">🅿️</div>
+            <p class="text-white font-bold text-sm">PayPal</p>
+            <p class="text-white/40 text-xs mt-0.5">بطاقة دولية · محفظة PayPal</p>
+          </button>
+          {% endif %}
+
+        </div>
+      </div>
+
+      <!-- ─── Moyasar Form ──────────────────────────────── -->
+      {% if moyasar_enabled %}
+      <div id="moyasarSection" class="hidden mb-4">
+        <div id="payError" class="hidden bg-red-500/20 border border-red-500/40 rounded-xl p-3 mb-4 text-red-300 text-sm text-center"></div>
+        <div id="moyasar-init-loader" class="text-center py-6 text-white/50 text-sm">جارٍ تحميل نموذج الدفع...</div>
+        <div class="mysr-form"></div>
+      </div>
+      {% endif %}
+
+      <!-- ─── PayPal Button ─────────────────────────────── -->
+      {% if paypal_enabled %}
+      <div id="paypalSection" class="hidden mb-4">
+        <div id="payError2" class="hidden bg-red-500/20 border border-red-500/40 rounded-xl p-3 mb-4 text-red-300 text-sm text-center"></div>
+        <div id="paypal-button-container"></div>
+      </div>
+      {% endif %}
+
+      {% else %}
+      <!-- No gateways configured — legacy Beezati button -->
+      <div id="payError" class="hidden bg-red-500/20 border border-red-500/40 rounded-xl p-3 mb-4 text-red-300 text-sm text-center"></div>
+      <button onclick="initiateBeezati()" id="payBtn"
               class="w-full btn-gold rounded-2xl py-4 text-xl font-black shadow-lg">
         ادفع الآن — {{ "%.2f"|format(link.amount) }} {{ link.currency }}
       </button>
+      {% endif %}
 
-      <div class="flex items-center justify-center gap-4 mt-4 text-white/30 text-xs">
-        <span>🔒 دفع آمن</span>
+      <div class="flex items-center justify-center gap-4 mt-5 text-white/25 text-xs">
+        <span>🔒 دفع آمن ومشفر</span>
         <span>•</span>
         <span>⚡ معالجة فورية</span>
         <span>•</span>
-        <span>✅ مشفر بالكامل</span>
+        <span>✅ SSL 256-bit</span>
       </div>
     </div>
 
     <!-- QR Code -->
     <div class="text-center mt-6">
       <p class="text-white/30 text-xs mb-3">مشاركة رابط الدفع</p>
-      <img src="data:image/png;base64,{{ qr_b64 }}" alt="QR Code" class="w-28 h-28 mx-auto rounded-xl border border-white/10 p-1 bg-white" />
+      <img src="data:image/png;base64,{{ qr_b64 }}" alt="QR Code"
+           class="w-28 h-28 mx-auto rounded-xl border border-white/10 p-1 bg-white" />
     </div>
   </div>
 </div>
 
 <script>
-  const TOKEN = "{{ link.token }}";
-  const PRE_FILLED = {{ 'true' if link.customer_name else 'false' }};
+const TOKEN      = "{{ link.token }}";
+const PRE_FILLED = {{ 'true' if link.customer_name else 'false' }};
+const AMOUNT     = {{ link.amount }};
+const CURRENCY   = "{{ link.currency }}";
 
-  async function initiatePayment() {
-    const btn = document.getElementById('payBtn');
-    const errDiv = document.getElementById('payError');
-    errDiv.classList.add('hidden');
-    btn.disabled = true;
-    btn.textContent = 'جارٍ المعالجة...';
+let currentGateway = null;
+let moyasarReady   = false;
+let paypalRendered = false;
 
-    const payload = { payment_link_token: TOKEN };
-    if (!PRE_FILLED) {
-      payload.customer_name = document.getElementById('cust_name').value;
-      payload.customer_email = document.getElementById('cust_email').value;
-      payload.customer_phone = document.getElementById('cust_phone').value;
-    }
+/* ── Customer data helpers ───────────────────────────── */
+function getCustomer() {
+  if (PRE_FILLED) return { customer_name: null, customer_email: null, customer_phone: null };
+  return {
+    customer_name:  document.getElementById('cust_name')?.value.trim()  || null,
+    customer_email: document.getElementById('cust_email')?.value.trim() || null,
+    customer_phone: document.getElementById('cust_phone')?.value.trim() || null,
+  };
+}
 
-    try {
-      const res = await fetch('/api/payment/initiate', {
+function validateCustomer() {
+  if (PRE_FILLED) return true;
+  const name = document.getElementById('cust_name')?.value.trim();
+  if (!name) {
+    document.getElementById('cust_name').focus();
+    showErr('يرجى إدخال اسمك الكامل');
+    return false;
+  }
+  return true;
+}
+
+function showErr(msg, id = 'payError') {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = msg;
+  el.classList.remove('hidden');
+  setTimeout(() => el.classList.add('hidden'), 6000);
+}
+
+/* ── Gateway selection ───────────────────────────────── */
+function selectGateway(gw) {
+  if (!validateCustomer()) return;
+  currentGateway = gw;
+
+  // UI
+  document.querySelectorAll('.gateway-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById(`gw-${gw}`)?.classList.add('selected');
+
+  // Hide all sections
+  const ms = document.getElementById('moyasarSection');
+  const ps = document.getElementById('paypalSection');
+  if (ms) ms.classList.add('hidden');
+  if (ps) ps.classList.add('hidden');
+
+  if (gw === 'moyasar') {
+    ms?.classList.remove('hidden');
+    if (!moyasarReady) initMoyasar();
+  } else if (gw === 'paypal') {
+    ps?.classList.remove('hidden');
+    if (!paypalRendered) initPayPal();
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   Moyasar Integration
+   ═══════════════════════════════════════════════════════ */
+async function initMoyasar() {
+  const loader = document.getElementById('moyasar-init-loader');
+  try {
+    const customer = getCustomer();
+    const res = await fetch('/api/payment/moyasar/prepare', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ payment_link_token: TOKEN, ...customer }),
+    });
+    const data = await res.json();
+    if (!res.ok) { showErr(data.detail || 'خطأ في تهيئة ميسر'); if (loader) loader.classList.add('hidden'); return; }
+
+    if (loader) loader.classList.add('hidden');
+
+    Moyasar.init({
+      element:            '.mysr-form',
+      amount:             data.amount_halalas,
+      currency:           data.currency,
+      description:        data.description,
+      publishable_api_key: data.publishable_key,
+      callback_url:       data.callback_url,
+      methods:            ['creditcard', 'stcpay', 'applepay'],
+      on_initiating: () => {
+        document.querySelector('.mysr-form .btn-primary') && null; // Moyasar handles loading
+      },
+    });
+    moyasarReady = true;
+  } catch (e) {
+    showErr('خطأ في الاتصال — حاول مجدداً');
+    if (loader) loader.classList.add('hidden');
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   PayPal Integration
+   ═══════════════════════════════════════════════════════ */
+function initPayPal() {
+  if (typeof paypal === 'undefined') {
+    showErr('PayPal SDK لم يتم تحميله — تحقق من اتصالك', 'payError2');
+    return;
+  }
+
+  paypal.Buttons({
+    style: {
+      shape:  'pill',
+      color:  'gold',
+      layout: 'vertical',
+      label:  'pay',
+    },
+
+    createOrder: async () => {
+      const customer = getCustomer();
+      const res = await fetch('/api/payment/paypal/create-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        body: JSON.stringify({ payment_link_token: TOKEN, ...customer }),
       });
       const data = await res.json();
-      if (data.payment_url) {
-        window.location.href = data.payment_url;
+      if (!res.ok) { showErr(data.detail || 'خطأ PayPal', 'payError2'); throw new Error(data.detail); }
+      // Save order_uuid for capture step
+      window._ppOrderUuid = data.order_uuid;
+      return data.id;  // PayPal order ID
+    },
+
+    onApprove: async (data) => {
+      const res = await fetch('/api/payment/paypal/capture', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          paypal_order_id: data.orderID,
+          order_uuid:      window._ppOrderUuid,
+        }),
+      });
+      const result = await res.json();
+      if (result.success) {
+        window.location.href = `/payment/success?order_id=${window._ppOrderUuid}`;
       } else {
-        errDiv.textContent = data.detail || 'حدث خطأ أثناء المعالجة';
-        errDiv.classList.remove('hidden');
-        btn.disabled = false;
-        btn.textContent = 'ادفع الآن — {{ "%.2f"|format(link.amount) }} {{ link.currency }}';
+        showErr(result.detail || 'فشلت عملية الدفع', 'payError2');
+        window.location.href = `/payment/failed?order_id=${window._ppOrderUuid}`;
       }
-    } catch(e) {
-      errDiv.textContent = 'خطأ في الاتصال، حاول مجدداً';
-      errDiv.classList.remove('hidden');
-      btn.disabled = false;
-      btn.textContent = 'ادفع الآن';
+    },
+
+    onCancel: () => {
+      showErr('تم إلغاء الدفع', 'payError2');
+    },
+
+    onError: (err) => {
+      console.error('PayPal error', err);
+      showErr('حدث خطأ في PayPal — حاول مجدداً', 'payError2');
+    },
+  }).render('#paypal-button-container');
+
+  paypalRendered = true;
+}
+
+/* ═══════════════════════════════════════════════════════
+   Beezati fallback (when no gateway is configured)
+   ═══════════════════════════════════════════════════════ */
+async function initiateBeezati() {
+  if (!validateCustomer()) return;
+  const btn    = document.getElementById('payBtn');
+  const errDiv = document.getElementById('payError');
+  errDiv?.classList.add('hidden');
+  btn.disabled  = true;
+  btn.textContent = 'جارٍ المعالجة...';
+
+  const payload = { payment_link_token: TOKEN, ...getCustomer() };
+  try {
+    const res  = await fetch('/api/payment/initiate', {
+      method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (data.payment_url) {
+      window.location.href = data.payment_url;
+    } else {
+      showErr(data.detail || 'حدث خطأ أثناء المعالجة');
+      btn.disabled    = false;
+      btn.textContent = `ادفع الآن — ${AMOUNT.toFixed(2)} ${CURRENCY}`;
     }
+  } catch(e) {
+    showErr('خطأ في الاتصال — حاول مجدداً');
+    btn.disabled    = false;
+    btn.textContent = 'ادفع الآن';
   }
+}
 </script>
 {% endblock %}

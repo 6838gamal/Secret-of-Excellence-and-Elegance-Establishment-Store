@@ -30,6 +30,7 @@ class Order(Base):
     status = Column(SAEnum(OrderStatus), default=OrderStatus.pending)
     transaction_id = Column(String(100), nullable=True)
     gateway_reference = Column(String(200), nullable=True)
+    gateway = Column(String(50), nullable=True, default="beezati")   # paypal | moyasar | beezati
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     paid_at = Column(DateTime(timezone=True), nullable=True)
 
