@@ -20,7 +20,7 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 8  # 8 hours
 
     # ─── Database ────────────────────────────────────────────────────────────
-    DATABASE_URL: str = "postgresql://gamalalmaqtary:xLETQQcyz4g5YQrH1DNJMolBy353PtIv@dpg-d99t3t77f7vs73bapu20-a.oregon-postgres.render.com/secret_of_excellence_and_elegance"
+    DATABASE_URL: str = "sqlite:///./tamayoz.db"
 
     # ─── Beezati Payment Gateway ─────────────────────────────────────────────
     BEEZATI_API_KEY: str = ""
