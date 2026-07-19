@@ -51,9 +51,6 @@ async def payment_page(token: str, request: Request, db: Session = Depends(get_d
         "company_name":       settings.COMPANY_NAME,
         "moyasar_pk":         settings.MOYASAR_PUBLISHABLE_KEY,
         "moyasar_enabled":    bool(settings.MOYASAR_PUBLISHABLE_KEY),
-        "paypal_client_id":   settings.PAYPAL_CLIENT_ID,
-        "paypal_sandbox":     settings.PAYPAL_SANDBOX,
-        "paypal_enabled":     bool(settings.PAYPAL_CLIENT_ID),
     })
 
 

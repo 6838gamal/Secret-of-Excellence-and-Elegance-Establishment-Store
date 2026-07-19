@@ -2,9 +2,6 @@
 {% block title %}ادفع الآن — {{ company_name }}{% endblock %}
 
 {% block head %}
-{% if paypal_enabled %}
-<script src="https://www.paypal.com/sdk/js?client-id={{ paypal_client_id }}&currency={{ link.currency }}&locale=ar_SA{% if paypal_sandbox %}&debug=false{% endif %}" defer></script>
-{% endif %}
 {% if moyasar_enabled %}
 <link rel="stylesheet" href="https://cdn.moyasar.com/mpf/1.14.1/moyasar.css" />
 <script src="https://cdn.moyasar.com/mpf/1.14.1/moyasar.js"></script>
@@ -104,58 +101,21 @@
       </div>
       {% endif %}
 
-      <!-- ─── Gateway Selection ─────────────────────────── -->
-      {% if moyasar_enabled or paypal_enabled %}
+      <!-- ─── Moyasar ──────────────────────────────────── -->
+      {% if moyasar_enabled %}
       <div class="mb-6">
-        <p class="text-white/40 text-xs font-semibold uppercase tracking-wider mb-3">اختر طريقة الدفع</p>
-        <div class="grid grid-cols-{{ '2' if moyasar_enabled and paypal_enabled else '1' }} gap-3">
-
-          {% if moyasar_enabled %}
-          <button type="button" onclick="selectGateway('moyasar')"
-                  id="gw-moyasar"
-                  class="gateway-card bg-white/5 rounded-2xl p-4 text-center relative">
-            <div class="gw-check absolute top-2 left-2 w-5 h-5 bg-gold-400 rounded-full items-center justify-center">
-              <span class="text-black text-xs font-bold">✓</span>
-            </div>
-            <!-- Moyasar logo approximation -->
-            <div class="text-2xl mb-1">💳</div>
-            <p class="text-white font-bold text-sm">ميسر</p>
-            <p class="text-white/40 text-xs mt-0.5">بطاقة · STC Pay · Apple Pay</p>
-          </button>
-          {% endif %}
-
-          {% if paypal_enabled %}
-          <button type="button" onclick="selectGateway('paypal')"
-                  id="gw-paypal"
-                  class="gateway-card bg-white/5 rounded-2xl p-4 text-center relative">
-            <div class="gw-check absolute top-2 left-2 w-5 h-5 bg-gold-400 rounded-full items-center justify-center">
-              <span class="text-black text-xs font-bold">✓</span>
-            </div>
-            <div class="text-2xl mb-1">🅿️</div>
-            <p class="text-white font-bold text-sm">PayPal</p>
-            <p class="text-white/40 text-xs mt-0.5">بطاقة دولية · محفظة PayPal</p>
-          </button>
-          {% endif %}
-
+        <p class="text-white/40 text-xs font-semibold uppercase tracking-wider mb-3">طريقة الدفع</p>
+        <div class="bg-white/5 rounded-2xl p-4 text-center">
+          <div class="text-2xl mb-1">💳</div>
+          <p class="text-white font-bold text-sm">ميسر</p>
+          <p class="text-white/40 text-xs mt-0.5">بطاقة · STC Pay · Apple Pay</p>
         </div>
       </div>
-
-      <!-- ─── Moyasar Form ──────────────────────────────── -->
-      {% if moyasar_enabled %}
-      <div id="moyasarSection" class="hidden mb-4">
+      <div id="moyasarSection" class="mb-4">
         <div id="payError" class="hidden bg-red-500/20 border border-red-500/40 rounded-xl p-3 mb-4 text-red-300 text-sm text-center"></div>
         <div id="moyasar-init-loader" class="text-center py-6 text-white/50 text-sm">جارٍ تحميل نموذج الدفع...</div>
         <div class="mysr-form"></div>
       </div>
-      {% endif %}
-
-      <!-- ─── PayPal Button ─────────────────────────────── -->
-      {% if paypal_enabled %}
-      <div id="paypalSection" class="hidden mb-4">
-        <div id="payError2" class="hidden bg-red-500/20 border border-red-500/40 rounded-xl p-3 mb-4 text-red-300 text-sm text-center"></div>
-        <div id="paypal-button-container"></div>
-      </div>
-      {% endif %}
 
       {% else %}
       <!-- No gateways configured — legacy Beezati button -->
@@ -190,9 +150,7 @@ const PRE_FILLED = {{ 'true' if link.customer_name else 'false' }};
 const AMOUNT     = {{ link.amount }};
 const CURRENCY   = "{{ link.currency }}";
 
-let currentGateway = null;
-let moyasarReady   = false;
-let paypalRendered = false;
+let moyasarReady = false;
 
 /* ── Customer data helpers ───────────────────────────── */
 function getCustomer() {
@@ -223,29 +181,8 @@ function showErr(msg, id = 'payError') {
   setTimeout(() => el.classList.add('hidden'), 6000);
 }
 
-/* ── Gateway selection ───────────────────────────────── */
-function selectGateway(gw) {
-  if (!validateCustomer()) return;
-  currentGateway = gw;
-
-  // UI
-  document.querySelectorAll('.gateway-card').forEach(c => c.classList.remove('selected'));
-  document.getElementById(`gw-${gw}`)?.classList.add('selected');
-
-  // Hide all sections
-  const ms = document.getElementById('moyasarSection');
-  const ps = document.getElementById('paypalSection');
-  if (ms) ms.classList.add('hidden');
-  if (ps) ps.classList.add('hidden');
-
-  if (gw === 'moyasar') {
-    ms?.classList.remove('hidden');
-    if (!moyasarReady) initMoyasar();
-  } else if (gw === 'paypal') {
-    ps?.classList.remove('hidden');
-    if (!paypalRendered) initPayPal();
-  }
-}
+/* Auto-init Moyasar on page load */
+document.addEventListener('DOMContentLoaded', () => { if (!moyasarReady) initMoyasar(); });
 
 /* ═══════════════════════════════════════════════════════
    Moyasar Integration
@@ -281,68 +218,6 @@ async function initMoyasar() {
     showErr('خطأ في الاتصال — حاول مجدداً');
     if (loader) loader.classList.add('hidden');
   }
-}
-
-/* ═══════════════════════════════════════════════════════
-   PayPal Integration
-   ═══════════════════════════════════════════════════════ */
-function initPayPal() {
-  if (typeof paypal === 'undefined') {
-    showErr('PayPal SDK لم يتم تحميله — تحقق من اتصالك', 'payError2');
-    return;
-  }
-
-  paypal.Buttons({
-    style: {
-      shape:  'pill',
-      color:  'gold',
-      layout: 'vertical',
-      label:  'pay',
-    },
-
-    createOrder: async () => {
-      const customer = getCustomer();
-      const res = await fetch('/api/payment/paypal/create-order', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ payment_link_token: TOKEN, ...customer }),
-      });
-      const data = await res.json();
-      if (!res.ok) { showErr(data.detail || 'خطأ PayPal', 'payError2'); throw new Error(data.detail); }
-      // Save order_uuid for capture step
-      window._ppOrderUuid = data.order_uuid;
-      return data.id;  // PayPal order ID
-    },
-
-    onApprove: async (data) => {
-      const res = await fetch('/api/payment/paypal/capture', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          paypal_order_id: data.orderID,
-          order_uuid:      window._ppOrderUuid,
-        }),
-      });
-      const result = await res.json();
-      if (result.success) {
-        window.location.href = `/payment/success?order_id=${window._ppOrderUuid}`;
-      } else {
-        showErr(result.detail || 'فشلت عملية الدفع', 'payError2');
-        window.location.href = `/payment/failed?order_id=${window._ppOrderUuid}`;
-      }
-    },
-
-    onCancel: () => {
-      showErr('تم إلغاء الدفع', 'payError2');
-    },
-
-    onError: (err) => {
-      console.error('PayPal error', err);
-      showErr('حدث خطأ في PayPal — حاول مجدداً', 'payError2');
-    },
-  }).render('#paypal-button-container');
-
-  paypalRendered = true;
 }
 
 /* ═══════════════════════════════════════════════════════

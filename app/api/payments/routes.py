@@ -1,4 +1,4 @@
-"""Payment processing routes: initiate, webhook, verify, PayPal, Moyasar."""
+"""Payment processing routes: initiate, webhook, verify, Moyasar."""
 import json
 from fastapi import APIRouter, Depends, HTTPException, Request, BackgroundTasks
 from fastapi.responses import RedirectResponse
@@ -15,7 +15,6 @@ from app.models.payment_link import PaymentLinkStatus
 from app.models.order import OrderStatus
 from app.models.logs import AuditAction
 from app.integrations.beezati.client import beezati_client, BeezatiError
-from app.integrations.paypal.client import paypal_client, PayPalError
 from app.integrations.moyasar.client import moyasar_client, MoyasarError
 from app.config.settings import settings
 
@@ -224,95 +223,3 @@ async def moyasar_verify(order_uuid: str, moyasar_payment_id: str, db: Session =
     return {"status": order.status.value}
 
 
-# ══════════════════════════════════════════════════════════
-#  PayPal
-# ══════════════════════════════════════════════════════════
-@router.post("/paypal/create-order")
-async def paypal_create_order(
-    payload: OrderCreate,
-    request: Request,
-    db: Session = Depends(get_db),
-):
-    """Create internal order + PayPal order. Returns PayPal order ID."""
-    if not paypal_client.configured:
-        raise HTTPException(status_code=503, detail="بوابة PayPal غير مفعّلة — يرجى إضافة PAYPAL_CLIENT_ID و PAYPAL_CLIENT_SECRET")
-
-    link = _validate_link(db, payload.payment_link_token)
-    order = create_order(
-        db,
-        payment_link_id=link.id,
-        amount=link.amount,
-        currency=link.currency,
-        customer_name=payload.customer_name or link.customer_name,
-        customer_email=payload.customer_email or link.customer_email,
-        customer_phone=payload.customer_phone or link.customer_phone,
-    )
-    order.gateway = "paypal"
-    db.commit()
-    db.refresh(order)
-
-    base = str(request.base_url).rstrip("/")
-    description = (
-        link.description
-        or (link.service.title if link.service else "دفع إلكتروني")
-    )
-
-    try:
-        pp_order = await paypal_client.create_order(
-            order_uuid=order.uuid,
-            amount=order.amount,
-            currency=order.currency,
-            description=description,
-            return_url=f"{base}/payment/success?order_id={order.uuid}",
-            cancel_url=f"{base}/payment/failed?order_id={order.uuid}",
-        )
-        paypal_order_id = pp_order["id"]
-        update_order_status(db, order, OrderStatus.processing, transaction_id=paypal_order_id)
-        log_audit(db, AuditAction.payment, description=f"PayPal order created {order.uuid}", ip=request.client.host)
-        return {"id": paypal_order_id, "order_uuid": order.uuid}
-
-    except PayPalError as e:
-        update_order_status(db, order, OrderStatus.failed)
-        raise HTTPException(status_code=502, detail=f"خطأ في PayPal: {str(e)}")
-
-
-@router.post("/paypal/capture")
-async def paypal_capture(
-    request: Request,
-    db: Session = Depends(get_db),
-):
-    """Capture an approved PayPal order and mark our order as paid."""
-    body = await request.json()
-    paypal_order_id = body.get("paypal_order_id")
-    order_uuid      = body.get("order_uuid")
-
-    if not paypal_order_id or not order_uuid:
-        raise HTTPException(status_code=400, detail="بيانات ناقصة")
-
-    order = get_order_by_uuid(db, order_uuid)
-    if not order:
-        raise HTTPException(status_code=404, detail="الطلب غير موجود")
-
-    if order.status == OrderStatus.paid:
-        return {"success": True, "already_paid": True}
-
-    try:
-        result = await paypal_client.capture_order(paypal_order_id)
-        capture_status = result.get("status", "")
-
-        if capture_status == "COMPLETED":
-            captures   = result["purchase_units"][0]["payments"]["captures"]
-            capture_id = captures[0]["id"] if captures else paypal_order_id
-            update_order_status(db, order, OrderStatus.paid, transaction_id=capture_id)
-            if order.payment_link:
-                order.payment_link.status = PaymentLinkStatus.paid
-                db.commit()
-            log_audit(db, AuditAction.payment, description=f"PayPal captured {order_uuid}")
-            return {"success": True, "order_uuid": order_uuid}
-        else:
-            update_order_status(db, order, OrderStatus.failed)
-            return {"success": False, "detail": f"PayPal status: {capture_status}"}
-
-    except PayPalError as e:
-        update_order_status(db, order, OrderStatus.failed)
-        raise HTTPException(status_code=502, detail=f"خطأ في PayPal: {str(e)}")
