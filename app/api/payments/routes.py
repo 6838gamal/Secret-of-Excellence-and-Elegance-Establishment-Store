@@ -32,7 +32,7 @@ def _validate_link(db, token):
         raise HTTPException(status_code=404, detail="رابط الدفع غير موجود")
     if link.status != PaymentLinkStatus.active:
         raise HTTPException(status_code=400, detail="رابط الدفع غير نشط أو منتهي")
-    if link.expires_at and link.expires_at < datetime.now(timezone.utc):
+    if link.expires_at and link.expires_at.replace(tzinfo=timezone.utc) < datetime.now(timezone.utc):
         raise HTTPException(status_code=400, detail="انتهت صلاحية رابط الدفع")
     return link
 
