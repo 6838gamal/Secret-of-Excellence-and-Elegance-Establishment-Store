@@ -36,6 +36,49 @@
     {% endfor %}
   </div>
 
+  <!-- Gateway Status -->
+  <div class="card rounded-2xl overflow-hidden mb-8">
+    <div class="px-6 py-4 border-b border-white/5">
+      <h2 class="text-white font-bold">حالة بوابات الدفع</h2>
+      <p class="text-white/30 text-xs mt-0.5">تحقق من إعداد مفاتيح API لكل بوابة</p>
+    </div>
+    <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+      {% for gw in gateways %}
+      <div class="rounded-2xl border {% if gw.all_ok %}border-green-500/30 bg-green-500/5{% elif gw.any_ok %}border-yellow-500/30 bg-yellow-500/5{% else %}border-red-500/30 bg-red-500/5{% endif %} p-4">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <span class="text-xl">{{ gw.icon }}</span>
+            <span class="text-white font-bold text-sm">{{ gw.name }}</span>
+          </div>
+          <span class="text-xs font-bold px-2.5 py-1 rounded-full
+            {% if gw.all_ok %}bg-green-500/20 text-green-400
+            {% elif gw.any_ok %}bg-yellow-500/20 text-yellow-400
+            {% else %}bg-red-500/20 text-red-400{% endif %}">
+            {% if gw.all_ok %}✅ مفعّل{% elif gw.any_ok %}⚠️ ناقص{% else %}❌ غير مضبوط{% endif %}
+          </span>
+        </div>
+        <div class="space-y-1.5">
+          {% for f in gw.fields %}
+          <div class="flex items-center justify-between text-xs">
+            <code class="text-white/50 font-mono">{{ f.label }}</code>
+            {% if f.ok %}
+            <span class="text-green-400 font-semibold">✓ مضبوط</span>
+            {% else %}
+            <span class="text-red-400 font-semibold">✗ مفقود</span>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+        {% if not gw.all_ok %}
+        <p class="text-white/30 text-xs mt-3 leading-relaxed">
+          أضف المفاتيح الناقصة عبر <strong class="text-white/50">Secrets</strong> في Replit ثم أعد تشغيل التطبيق.
+        </p>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
   <!-- Recent Orders -->
   <div class="card rounded-2xl overflow-hidden">
     <div class="px-6 py-4 border-b border-white/5 flex items-center justify-between">

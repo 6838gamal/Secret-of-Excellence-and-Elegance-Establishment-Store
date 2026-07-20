@@ -77,11 +77,37 @@ async def dashboard(
 ):
     stats = get_dashboard_stats(db)
     recent_orders = get_all_orders(db)[:10]
+
+    # Gateway / integration status
+    gateways = [
+        {
+            "name": "ميسر (Moyasar)",
+            "icon": "💳",
+            "fields": [
+                {"label": "MOYASAR_PUBLISHABLE_KEY", "ok": bool(settings.MOYASAR_PUBLISHABLE_KEY)},
+                {"label": "MOYASAR_SECRET_KEY",      "ok": bool(settings.MOYASAR_SECRET_KEY)},
+            ],
+        },
+        {
+            "name": "بيزاتي (Beezati)",
+            "icon": "🏦",
+            "fields": [
+                {"label": "BEEZATI_API_KEY",       "ok": bool(settings.BEEZATI_API_KEY)},
+                {"label": "BEEZATI_SECRET",         "ok": bool(settings.BEEZATI_SECRET)},
+                {"label": "BEEZATI_WEBHOOK_SECRET", "ok": bool(settings.BEEZATI_WEBHOOK_SECRET)},
+            ],
+        },
+    ]
+    for gw in gateways:
+        gw["all_ok"]  = all(f["ok"] for f in gw["fields"])
+        gw["any_ok"]  = any(f["ok"] for f in gw["fields"])
+
     return templates.TemplateResponse(request, "admin/dashboard.html", {
         "user": current_user,
         "stats": stats,
         "recent_orders": recent_orders,
         "company_name": settings.COMPANY_NAME,
+        "gateways": gateways,
     })
 
 
