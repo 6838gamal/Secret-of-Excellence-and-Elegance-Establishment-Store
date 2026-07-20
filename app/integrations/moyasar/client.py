@@ -3,10 +3,10 @@ Moyasar Payment Gateway
 Docs: https://docs.moyasar.com
 API Base: https://api.moyasar.com/v1
 Amount unit: smallest (halalas for SAR — 1 SAR = 100 halalas)
+
+Auth: Basic Auth — secret key as username, empty password
+  requests.get(url, auth=('sk_test_...', ''))
 """
-import base64
-import hashlib
-import hmac
 import httpx
 from app.config.settings import settings
 
@@ -26,12 +26,9 @@ class MoyasarClient:
     def configured(self) -> bool:
         return bool(self.publishable_key)
 
-    def _auth_headers(self) -> dict:
-        creds = base64.b64encode(f"{self.secret_key}:".encode()).decode()
-        return {
-            "Authorization": f"Basic {creds}",
-            "Content-Type": "application/json",
-        }
+    def _auth(self) -> tuple:
+        """Basic Auth: (secret_key, '') — as per Moyasar docs."""
+        return (self.secret_key or "", "")
 
     @staticmethod
     def to_halalas(amount: float, currency: str) -> int:
@@ -46,7 +43,7 @@ class MoyasarClient:
         async with httpx.AsyncClient(timeout=20) as client:
             resp = await client.get(
                 f"{self.BASE_URL}/payments/{payment_id}",
-                headers=self._auth_headers(),
+                auth=self._auth(),
             )
         if resp.status_code != 200:
             raise MoyasarError(f"Moyasar get payment error: {resp.status_code} — {resp.text}")
