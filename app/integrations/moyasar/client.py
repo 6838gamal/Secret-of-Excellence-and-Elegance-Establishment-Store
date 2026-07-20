@@ -1,7 +1,7 @@
 """
 Moyasar Payment Gateway
 Docs: https://docs.moyasar.com
-API Base: https://api.moyasar.com/v1
+API Base: https://api.moyasar.com/v1/payments
 Amount unit: smallest (halalas for SAR — 1 SAR = 100 halalas)
 
 Auth: Basic Auth — secret key as username, empty password
@@ -16,7 +16,7 @@ class MoyasarError(Exception):
 
 
 class MoyasarClient:
-    BASE_URL = "https://api.moyasar.com/v1"
+    BASE_URL = "https://api.moyasar.com/v1/payments"
 
     def __init__(self):
         self.publishable_key = settings.MOYASAR_PUBLISHABLE_KEY
