@@ -1,5 +1,6 @@
 from pydantic_settings import BaseSettings
 from pydantic import Field
+from typing import Optional
 from functools import lru_cache
 
 
@@ -29,8 +30,8 @@ class Settings(BaseSettings):
     BEEZATI_WEBHOOK_SECRET: str = ""
 
     # ─── Moyasar ─────────────────────────────────────────────────────────────
-    MOYASAR_PUBLISHABLE_KEY: str = ""
-    MOYASAR_SECRET_KEY: str = ""
+    MOYASAR_PUBLISHABLE_KEY: Optional[str] = None
+    MOYASAR_SECRET_KEY: Optional[str] = None
 
     # ─── Admin Seed ──────────────────────────────────────────────────────────
     ADMIN_EMAIL: str = "admin@tamayoz.com"
