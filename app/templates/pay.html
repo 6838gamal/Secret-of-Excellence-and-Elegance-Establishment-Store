@@ -181,8 +181,10 @@ function showErr(msg, id = 'payError') {
   setTimeout(() => el.classList.add('hidden'), 6000);
 }
 
-/* Auto-init Moyasar on page load */
+/* Auto-init Moyasar on page load — only when gateway is configured */
+{% if moyasar_enabled %}
 document.addEventListener('DOMContentLoaded', () => { if (!moyasarReady) initMoyasar(); });
+{% endif %}
 
 /* ═══════════════════════════════════════════════════════
    Moyasar Integration
