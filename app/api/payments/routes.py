@@ -1,9 +1,13 @@
 """Payment processing routes: initiate, webhook, verify, Moyasar."""
 import json
+import logging
+import traceback
 from fastapi import APIRouter, Depends, HTTPException, Request, BackgroundTasks
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, JSONResponse
 from sqlalchemy.orm import Session
 from datetime import datetime, timezone
+
+logger = logging.getLogger(__name__)
 
 from app.database.connection import get_db
 from app.schemas.payment import OrderCreate, BeezatiWebhookPayload
@@ -156,43 +160,51 @@ async def moyasar_prepare(
     Creates our internal order and returns the data needed to
     initialize Moyasar.js on the frontend.
     """
-    if not moyasar_client.configured:
-        raise HTTPException(status_code=503, detail="بوابة ميسر غير مفعّلة — يرجى إضافة MOYASAR_PUBLISHABLE_KEY")
+    try:
+        if not moyasar_client.configured:
+            raise HTTPException(status_code=503, detail="بوابة ميسر غير مفعّلة — يرجى إضافة MOYASAR_PUBLISHABLE_KEY")
 
-    link = _validate_link(db, payload.payment_link_token)
-    order = create_order(
-        db,
-        payment_link_id=link.id,
-        amount=link.amount,
-        currency=link.currency,
-        customer_name=payload.customer_name or link.customer_name,
-        customer_email=payload.customer_email or link.customer_email,
-        customer_phone=payload.customer_phone or link.customer_phone,
-    )
-    order.gateway = "moyasar"
-    db.commit()
-    db.refresh(order)
+        link = _validate_link(db, payload.payment_link_token)
+        order = create_order(
+            db,
+            payment_link_id=link.id,
+            amount=link.amount,
+            currency=link.currency,
+            customer_name=payload.customer_name or link.customer_name,
+            customer_email=payload.customer_email or link.customer_email,
+            customer_phone=payload.customer_phone or link.customer_phone,
+        )
+        order.gateway = "moyasar"
+        db.commit()
+        db.refresh(order)
 
-    base = str(request.base_url).rstrip("/")
-    # Moyasar will append ?id=...&status=... to this URL
-    callback_url = f"{base}/payment/moyasar/callback?order_uuid={order.uuid}"
+        base = str(request.base_url).rstrip("/")
+        callback_url = f"{base}/payment/moyasar/callback?order_uuid={order.uuid}"
 
-    description = (
-        link.description
-        or (link.service.title if link.service else "دفع إلكتروني")
-    )
+        description = (
+            link.description
+            or (link.service.title if link.service else "دفع إلكتروني")
+        )
 
-    update_order_status(db, order, OrderStatus.processing)
-    log_audit(db, AuditAction.payment, description=f"Moyasar prepare order {order.uuid}", ip=request.client.host if request.client else None)
+        update_order_status(db, order, OrderStatus.processing)
+        log_audit(db, AuditAction.payment, description=f"Moyasar prepare order {order.uuid}",
+                  ip=request.client.host if request.client else None)
 
-    return {
-        "order_uuid":     order.uuid,
-        "amount_halalas": moyasar_client.to_halalas(order.amount, order.currency),
-        "currency":       order.currency,
-        "description":    description,
-        "callback_url":   callback_url,
-        "publishable_key": moyasar_client.publishable_key,
-    }
+        return {
+            "order_uuid":      order.uuid,
+            "amount_halalas":  moyasar_client.to_halalas(order.amount, order.currency),
+            "currency":        order.currency,
+            "description":     description,
+            "callback_url":    callback_url,
+            "publishable_key": moyasar_client.publishable_key,
+        }
+
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.error("moyasar_prepare FAILED for token=%s\n%s",
+                     payload.payment_link_token, traceback.format_exc())
+        return JSONResponse(status_code=500, content={"detail": f"خطأ داخلي: {exc}"})
 
 
 @router.get("/moyasar/verify/{order_uuid}")
