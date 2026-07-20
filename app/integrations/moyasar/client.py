@@ -42,7 +42,7 @@ class MoyasarClient:
         """Fetch a payment by ID to verify status."""
         async with httpx.AsyncClient(timeout=20) as client:
             resp = await client.get(
-                f"{self.BASE_URL}/payments/{payment_id}",
+                f"{self.BASE_URL}/{payment_id}",
                 auth=self._auth(),
             )
         if resp.status_code != 200:
